@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ko" data-mode="dark" data-theme="purple">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>계산기</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- 우측 상단 설정 버튼 -->
+  <button class="settings-btn" id="settingsBtn" aria-label="테마 설정">⚙️</button>
+
+  <!-- 테마 패널 (기본 숨김) -->
+  <div class="theme-panel" id="themePanel">
+    <div class="theme-panel-header">
+      <span class="theme-panel-title">테마 설정</span>
+      <button class="theme-panel-close" id="themeClose" aria-label="닫기">✕</button>
+    </div>
+    <div class="theme-section-label">색상</div>
+    <div class="theme-swatches" id="swatches"></div>
+    <div class="theme-section-label">모드</div>
+    <div class="mode-buttons">
+      <button class="mode-btn" id="modeDark"  data-mode="dark">🌙 다크</button>
+      <button class="mode-btn" id="modeLight" data-mode="light">☀️ 라이트</button>
+    </div>
+  </div>
+  <div class="theme-backdrop" id="themeBackdrop"></div>
+
+  <div class="app">
+
+    <!-- 계산기 본체 -->
+    <div class="calculator">
+      <div class="display">
+        <div class="display-history" id="history"></div>
+        <div class="display-expression" id="expression"></div>
+        <div class="display-current" id="current">0</div>
+      </div>
+      <div class="buttons">
+        <button class="btn btn-util" data-action="clear" aria-label="전체 초기화">C</button>
+        <button class="btn btn-util" data-action="backspace" aria-label="한 자리 삭제">⌫</button>
+        <button class="btn btn-util" data-action="percent" aria-label="퍼센트">%</button>
+        <button class="btn btn-operator" data-action="operator" data-value="÷" aria-label="나누기">÷</button>
+
+        <button class="btn btn-number" data-action="number" data-value="7">7</button>
+        <button class="btn btn-number" data-action="number" data-value="8">8</button>
+        <button class="btn btn-number" data-action="number" data-value="9">9</button>
+        <button class="btn btn-operator" data-action="operator" data-value="×" aria-label="곱하기">×</button>
+
+        <button class="btn btn-number" data-action="number" data-value="4">4</button>
+        <button class="btn btn-number" data-action="number" data-value="5">5</button>
+        <button class="btn btn-number" data-action="number" data-value="6">6</button>
+        <button class="btn btn-operator" data-action="operator" data-value="-" aria-label="빼기">−</button>
+
+        <button class="btn btn-number" data-action="number" data-value="1">1</button>
+        <button class="btn btn-number" data-action="number" data-value="2">2</button>
+        <button class="btn btn-number" data-action="number" data-value="3">3</button>
+        <button class="btn btn-operator" data-action="operator" data-value="+" aria-label="더하기">+</button>
+
+        <button class="btn btn-number btn-zero" data-action="number" data-value="0">0</button>
+        <button class="btn btn-number" data-action="decimal" aria-label="소수점">.</button>
+        <button class="btn btn-equals" data-action="equals" aria-label="계산">=</button>
+      </div>
+    </div>
+
+    <!-- 월 분할 패널 -->
+    <div class="month-panel">
+      <div class="month-panel-title">월 분할</div>
+      <p class="month-panel-desc">현재 숫자를 12로 나눠<br>월별 금액을 계산합니다</p>
+      <button class="btn-month" id="btnMonth" aria-label="12로 나누기">÷ 12 (월)</button>
+      <div class="month-divider"></div>
+      <div class="month-result-box">
+        <span class="month-result-label">결과</span>
+        <span class="month-result-value" id="monthResult">-</span>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="theme.js"></script>
+  <script src="calculator.js"></script>
+</body>
+</html>
