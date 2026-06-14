@@ -105,7 +105,11 @@ function appendNumber(value) {
   } else if (state.current === '0') {
     state.current = value;
   } else {
-    if (state.current.length >= 15) return;
+    if (state.current.length >= 15) {
+      elCurrent.classList.add('shake');
+      setTimeout(() => elCurrent.classList.remove('shake'), 400);
+      return;
+    }
     state.current += value;
   }
 
@@ -158,7 +162,10 @@ function calculate(chain = false) {
 
   const resultStr = result === 'Error' ? 'Error' : formatResult(result);
   const completedLine = `${state.previousDisplay || addCommas(state.previous)} ${state.operator} ${addCommas(state.current)} = ${addCommas(resultStr)}`;
-  if (!chain && !state.shouldReset) state.history.push(completedLine);
+  if (!chain && !state.shouldReset) {
+    state.history.push(completedLine);
+    if (state.history.length > 100) state.history.shift();
+  }
   state.expression = chain ? `${state.previousDisplay || addCommas(state.previous)} ${state.operator} ${addCommas(state.current)} =` : '';
 
   state.current = resultStr;
@@ -183,9 +190,7 @@ function clearAll() {
   state.previousDisplay = '';
   state.operator = null;
   state.expression = '';
-  state.history = [];
   state.preChain = null;
-  historyExpanded = false;
   state.shouldReset = false;
   state.afterEquals = false;
   elMonthResult.textContent = '-';
@@ -215,7 +220,7 @@ function backspace() {
       state.previous        = '';
       state.previousDisplay = '';
       state.operator        = null;
-      state.shouldReset     = true;
+      state.shouldReset     = false;
       state.expression      = '';
       document.querySelectorAll('.btn-operator').forEach(btn => btn.classList.remove('active'));
     }
@@ -248,6 +253,7 @@ function percent() {
   if (state.current === 'Error') return;
   state.current = formatResult(parseFloat(state.current) / 100);
   state.expression = '';
+  document.querySelectorAll('.btn-operator').forEach(btn => btn.classList.remove('active'));
 }
 
 function divideByMonth() {
@@ -272,7 +278,7 @@ function divideByMonth() {
     if (isNaN(value)) { elMonthResult.textContent = '-'; elMonthResultWrap.dataset.raw = ''; return; }
   }
 
-  const raw = formatResult(value / 12);
+  const raw = Math.floor(value / 12).toString();
   elMonthResult.textContent = addCommas(raw);
   elMonthResultWrap.dataset.raw = raw;
   const monthCopyBtn = elMonthResultWrap.querySelector('.copy-btn');
@@ -355,7 +361,7 @@ function renderTaxSection(container, base, cfg, isAddDir) {
       taxRow(container, '부가세 (10%)', tax, false);
       taxRow(container, '합계', base + tax, true);
     } else {
-      const net  = Math.floor(base / (1 + rate));
+      const net  = Math.round(base / (1 + rate));
       const tax  = base - net;
       taxRow(container, '합계', base, false);
       taxRow(container, '부가세 (10%)', tax, false);
@@ -378,7 +384,7 @@ function renderTaxSection(container, base, cfg, isAddDir) {
         taxRow(container, netLabel, base - tax, true);
       }
     } else {
-      const gross = Math.floor(base / (1 - rate));
+      const gross = Math.round(base / (1 - rate));
       taxRow(container, netLabel, base, false);
       if (parts) {
         let total = 0;
@@ -412,8 +418,8 @@ function updateTax() {
   const cfg = getTaxConfig();
 
   const isVat = cfg.isVat;
-  elTaxAddLabel.textContent = isVat ? '공급가액 → 합계' : '총지급액 → 실수령액';
-  elTaxSubLabel.textContent = isVat ? '합계 → 공급가액' : '실수령액 → 총지급액';
+  elTaxAddLabel.textContent = isVat ? '공급가액 → 합계' : taxType === 'custom' ? '세전 → 세후' : '총지급액 → 실수령액';
+  elTaxSubLabel.textContent = isVat ? '합계 → 공급가액' : taxType === 'custom' ? '세후 → 세전' : '실수령액 → 총지급액';
 
   renderTaxSection(elTaxAddRows, value, cfg, true);
   renderTaxSection(elTaxSubRows, value, cfg, false);
@@ -496,6 +502,14 @@ function toDateParam(d) {
   return `${y}${m}${day}`;
 }
 
+function toKSTDateParam() {
+  const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+  const y = kst.getUTCFullYear();
+  const m = String(kst.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(kst.getUTCDate()).padStart(2, '0');
+  return `${y}${m}${d}`;
+}
+
 function toKoreanDate(d) {
   return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
 }
@@ -509,8 +523,8 @@ async function fetchExchangeRates() {
   const proxyUrl = window.EXIM_PROXY_URL;
   if (!proxyUrl) { setApiStatus('환율 직접 입력'); return; }
 
-  // 당일 캐시 확인
-  const today = toDateParam(new Date());
+  // 당일 캐시 확인 (KST 기준)
+  const today = toKSTDateParam();
   const cached = localStorage.getItem('calc-bok-cache');
   if (cached) {
     try {
@@ -565,7 +579,7 @@ function applyApiRates(rates, label) {
   if (rates.usd) { currencyRates.usd = rates.usd; localStorage.setItem('calc-rate-usd', rates.usd); }
   if (rates.eur) { currencyRates.eur = rates.eur; localStorage.setItem('calc-rate-eur', rates.eur); }
   if (rates.jpy) { currencyRates.jpy = rates.jpy; localStorage.setItem('calc-rate-jpy', rates.jpy); }
-  setApiStatus(`기준 환율 ${label}`);
+  setApiStatus(label);
   syncCurrencyUI();
   updateCurrency();
 }
@@ -747,8 +761,8 @@ document.addEventListener('keydown', e => {
       e.preventDefault();
       navigator.clipboard.readText().then(text => {
         const num = text.replace(/,/g, '').trim();
-        if (/^-?\d+(\.\d+)?$/.test(num)) {
-          state.current = num.startsWith('-') ? num.replace('-', '') : num;
+        if (/^\d+(\.\d+)?$/.test(num)) {
+          state.current = num;
           state.shouldReset = false;
           state.afterEquals = false;
           state.expression = '';
