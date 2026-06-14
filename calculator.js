@@ -528,9 +528,9 @@ async function fetchExchangeRates(forceRefresh = false) {
 
   // 현재환율 모드는 캐시 없이 항상 호출
   const today = toKSTDateParam();
-  const cacheKey = 'calc-bok-cache-v2';
+  const cacheKey = 'calc-bok-cache';
   if (!forceRefresh && rateMode === 'official') {
-    const cached = localStorage.getItem(cacheKey);
+    const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
       try {
         const { date, rates, label } = JSON.parse(cached);
@@ -575,7 +575,7 @@ async function fetchExchangeRates(forceRefresh = false) {
         );
         label = `한국은행 ${toKoreanDate(d)} 최초고시`;
       }
-      localStorage.setItem(cacheKey, JSON.stringify({ date: today, rates, label }));
+      sessionStorage.setItem(cacheKey, JSON.stringify({ date: today, rates, label }));
     }
 
     applyApiRates(rates, label);
