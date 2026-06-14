@@ -435,11 +435,12 @@ const CURRENCY_META = {
 
 let currencyType = 'usd';
 let customCurrencySymbol = '';
+let ratesLoaded = false; // API 응답 전까지 변환 결과 숨김
 
 const currencyRates = {
-  usd:    parseFloat(localStorage.getItem('calc-rate-usd'))    || 1350,
-  jpy:    parseFloat(localStorage.getItem('calc-rate-jpy'))    || 950,
-  eur:    parseFloat(localStorage.getItem('calc-rate-eur'))    || 1480,
+  usd:    parseFloat(localStorage.getItem('calc-rate-usd'))    || 0,
+  jpy:    parseFloat(localStorage.getItem('calc-rate-jpy'))    || 0,
+  eur:    parseFloat(localStorage.getItem('calc-rate-eur'))    || 0,
   custom: parseFloat(localStorage.getItem('calc-rate-custom')) || 0,
 };
 
@@ -498,21 +499,6 @@ function setCurrencyDash(elFrom, elVal) {
 }
 
 // ── 한국은행 ECOS 환율 API ──
-function toDateParam(d) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}${m}${day}`;
-}
-
-function toKSTDateParam() {
-  const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
-  const y = kst.getUTCFullYear();
-  const m = String(kst.getUTCMonth() + 1).padStart(2, '0');
-  const d = String(kst.getUTCDate()).padStart(2, '0');
-  return `${y}${m}${d}`;
-}
-
 function toKoreanDate(d) {
   return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
 }
@@ -522,7 +508,7 @@ function setApiStatus(text, isError = false) {
   elCurrencyApiStatus.className = 'currency-api-status' + (isError ? ' error' : '');
 }
 
-async function fetchExchangeRates(forceRefresh = false) {
+async function fetchExchangeRates() {
   const proxyUrl = window.EXIM_PROXY_URL;
   if (!proxyUrl) { setApiStatus('환율 직접 입력'); return; }
 
@@ -533,7 +519,7 @@ async function fetchExchangeRates(forceRefresh = false) {
     const url = rateMode === 'current' ? `${proxyUrl}?mode=current` : proxyUrl;
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 10000);
-    const res = await fetch(url, { signal: ctrl.signal });
+    const res = await fetch(url, { signal: ctrl.signal, cache: 'no-store' });
     clearTimeout(timer);
 
     const data = await res.json();
@@ -578,6 +564,7 @@ async function fetchExchangeRates(forceRefresh = false) {
     applyApiRates(rates, label);
   } catch (_) {
     setApiStatus('조회 실패 · 직접 입력', true);
+    ratesLoaded = true; // 실패해도 직접 입력은 가능하도록 잠금 해제
   } finally {
     elCurrencyRefreshBtn.classList.remove('spinning');
   }
@@ -587,12 +574,13 @@ function applyApiRates(rates, label) {
   if (rates.usd) { currencyRates.usd = rates.usd; localStorage.setItem('calc-rate-usd', rates.usd); }
   if (rates.eur) { currencyRates.eur = rates.eur; localStorage.setItem('calc-rate-eur', rates.eur); }
   if (rates.jpy) { currencyRates.jpy = rates.jpy; localStorage.setItem('calc-rate-jpy', rates.jpy); }
+  ratesLoaded = true;
   setApiStatus(label);
   syncCurrencyUI();
   updateCurrency();
 }
 
-elCurrencyRefreshBtn.addEventListener('click', () => fetchExchangeRates(true));
+elCurrencyRefreshBtn.addEventListener('click', () => fetchExchangeRates());
 
 elRateModeToggle.addEventListener('click', e => {
   const btn = e.target.closest('.rate-mode-btn');
@@ -601,7 +589,8 @@ elRateModeToggle.addEventListener('click', e => {
   elRateModeToggle.querySelectorAll('.rate-mode-btn').forEach(b =>
     b.classList.toggle('active', b === btn)
   );
-  fetchExchangeRates(true);
+  ratesLoaded = false;
+  fetchExchangeRates();
 });
 
 function syncCurrencyUI() {
@@ -616,6 +605,13 @@ function syncCurrencyUI() {
 }
 
 function updateCurrency() {
+  // API 아직 미응답 + custom 아닌 경우 → 대시 유지
+  if (!ratesLoaded && currencyType !== 'custom') {
+    setCurrencyDash(elCurrFtoKFrom, elCurrFtoKValue);
+    setCurrencyDash(elCurrKtoFFrom, elCurrKtoFValue);
+    return;
+  }
+
   const meta   = getCurrencyMeta();
   const rate   = currencyRates[currencyType];
   const { symbol, unit, decimals } = meta;
@@ -666,6 +662,7 @@ elCurrencyRateInput.addEventListener('input', () => {
   if (!isNaN(v) && v > 0) {
     currencyRates[currencyType] = v;
     localStorage.setItem(`calc-rate-${currencyType}`, v);
+    ratesLoaded = true;
     updateCurrency();
   }
 });
