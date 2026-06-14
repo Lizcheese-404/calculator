@@ -526,21 +526,6 @@ async function fetchExchangeRates(forceRefresh = false) {
   const proxyUrl = window.EXIM_PROXY_URL;
   if (!proxyUrl) { setApiStatus('환율 직접 입력'); return; }
 
-  // 현재환율 모드만 5분 TTL 세션 캐시 (open.er-api 과호출 방지)
-  // 최초고시는 Worker HTTP 캐시(max-age=21600)에 위임 — sessionStorage 캐시 없음
-  const CURRENT_KEY = 'calc-bok-current';
-  const CURRENT_TTL = 5 * 60 * 1000;
-
-  if (!forceRefresh && rateMode === 'current') {
-    try {
-      const cached = sessionStorage.getItem(CURRENT_KEY);
-      if (cached) {
-        const { fetchedAt, rates, label } = JSON.parse(cached);
-        if (Date.now() - fetchedAt < CURRENT_TTL) { applyApiRates(rates, label); return; }
-      }
-    } catch (_) {}
-  }
-
   elCurrencyRefreshBtn.classList.add('spinning');
   setApiStatus('환율 조회 중…');
 
@@ -577,7 +562,6 @@ async function fetchExchangeRates(forceRefresh = false) {
       } else {
         label = '현재 환율';
       }
-      sessionStorage.setItem(CURRENT_KEY, JSON.stringify({ fetchedAt: Date.now(), rates, label }));
     } else {
       const timeStr = (usdItem || eurItem || jpyItem)?.time ?? '';
       label = '한국은행';

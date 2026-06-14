@@ -120,7 +120,7 @@ export default {
       return new Response(JSON.stringify(output), {
         headers: {
           'Content-Type': 'application/json',
-          'Cache-Control': mode === 'current' ? 'no-store' : 'public, max-age=21600',
+          'Cache-Control': 'no-store',
           ...corsHeaders(origin),
         },
       });
