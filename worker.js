@@ -45,9 +45,51 @@ async function fetchRate(apiKey, startDate, endDate, itemCode) {
   const data = await res.json();
   const rows = data?.StatisticSearch?.row;
   if (!rows || rows.length === 0) return null;
-  // 가장 최근 날짜의 값 반환
   const latest = rows[rows.length - 1];
   return { value: latest.DATA_VALUE, time: latest.TIME };
+}
+
+async function fetchOfficialRates(apiKey, origin) {
+  const today = new Date();
+  const weekAgo = new Date(today);
+  weekAgo.setDate(weekAgo.getDate() - 7);
+  const endDate = dateStr(today);
+  const startDate = dateStr(weekAgo);
+
+  const results = await Promise.all(
+    ITEMS.map(item => fetchRate(apiKey, startDate, endDate, item.code))
+  );
+
+  const output = ITEMS.map((item, i) => ({
+    cur_unit: item.cur_unit,
+    deal_bas_r: results[i]?.value ?? null,
+    time: results[i]?.time ?? null,
+  })).filter(r => r.deal_bas_r !== null);
+
+  if (output.length === 0) throw new Error('환율 데이터 없음');
+  return output;
+}
+
+async function fetchCurrentRates(origin) {
+  // open.er-api.com 무료 실시간 환율 (USD 기준)
+  const res = await fetch('https://open.er-api.com/v6/latest/USD', {
+    cf: { connectTimeoutMs: 8000, readTimeoutMs: 8000 },
+  });
+  const data = await res.json();
+  if (data.result !== 'success') throw new Error('환율 조회 실패');
+
+  const krw = data.rates.KRW;
+  const jpy = data.rates.JPY;
+  const eur = data.rates.EUR;
+
+  // 업데이트 시각을 YYYYMMDD HH:MM(UTC) 형태로 전달
+  const updated = data.time_last_update_utc ?? null;
+
+  return [
+    { cur_unit: 'USD',     deal_bas_r: krw.toFixed(2),               time: updated },
+    { cur_unit: 'JPY(100)',deal_bas_r: (krw / jpy * 100).toFixed(2), time: updated },
+    { cur_unit: 'EUR',     deal_bas_r: (krw / eur).toFixed(2),       time: updated },
+  ];
 }
 
 export default {
@@ -62,43 +104,23 @@ export default {
       return new Response('Method Not Allowed', { status: 405 });
     }
 
-    const apiKey = env.BOK_API_KEY;
-    if (!apiKey) {
-      return new Response(JSON.stringify({ error: 'BOK_API_KEY not configured' }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
-      });
-    }
-
-    // 오늘부터 7일 이전 범위 조회 (주말·공휴일 대비)
-    const today = new Date();
-    const weekAgo = new Date(today);
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    const endDate = dateStr(today);
-    const startDate = dateStr(weekAgo);
+    const { searchParams } = new URL(request.url);
+    const mode = searchParams.get('mode') || 'official';
 
     try {
-      const results = await Promise.all(
-        ITEMS.map(item => fetchRate(apiKey, startDate, endDate, item.code))
-      );
-
-      const output = ITEMS.map((item, i) => ({
-        cur_unit: item.cur_unit,
-        deal_bas_r: results[i]?.value ?? null,
-        time: results[i]?.time ?? null,
-      })).filter(r => r.deal_bas_r !== null);
-
-      if (output.length === 0) {
-        return new Response(JSON.stringify({ error: '환율 데이터 없음' }), {
-          status: 404,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
-        });
+      let output;
+      if (mode === 'current') {
+        output = await fetchCurrentRates(origin);
+      } else {
+        const apiKey = env.BOK_API_KEY;
+        if (!apiKey) throw new Error('BOK_API_KEY not configured');
+        output = await fetchOfficialRates(apiKey, origin);
       }
 
       return new Response(JSON.stringify(output), {
         headers: {
           'Content-Type': 'application/json',
-          'Cache-Control': 'public, max-age=21600',
+          'Cache-Control': mode === 'current' ? 'no-store' : 'public, max-age=21600',
           ...corsHeaders(origin),
         },
       });

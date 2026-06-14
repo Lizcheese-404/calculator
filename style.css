@@ -741,7 +741,34 @@ body {
 .currency-panel-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 6px;
+}
+.currency-panel-header .tax-panel-title {
+  flex: 1;
+}
+
+.rate-mode-toggle {
+  display: flex;
+  background: var(--btn-bg);
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+}
+.rate-mode-btn {
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.rate-mode-btn.active {
+  background: var(--accent);
+  color: #fff;
 }
 
 .currency-refresh-btn {
