@@ -747,27 +747,34 @@ body {
   flex: 1;
 }
 
-.rate-mode-toggle {
-  display: flex;
-  background: var(--btn-bg);
-  border-radius: 8px;
-  padding: 2px;
-  gap: 2px;
+.rate-type-btns {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  margin-bottom: 6px;
 }
-.rate-mode-btn {
-  background: none;
-  border: none;
-  border-radius: 6px;
-  color: var(--text-dim);
-  font-size: 11px;
-  font-weight: 500;
-  padding: 3px 8px;
+.rate-type-btn {
+  background: var(--bg-btn-num);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-secondary);
   cursor: pointer;
+  font-size: 0.58rem;
+  font-weight: 500;
+  line-height: 1.3;
+  padding: 5px 2px;
+  text-align: center;
   transition: background 0.15s, color 0.15s;
+  outline: none;
   white-space: nowrap;
 }
-.rate-mode-btn.active {
+.rate-type-btn:hover {
+  background: var(--bg-btn-util);
+  color: var(--text-primary);
+}
+.rate-type-btn.active {
   background: var(--accent);
+  border-color: transparent;
   color: #fff;
 }
 

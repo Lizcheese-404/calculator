@@ -70,28 +70,6 @@ async function fetchOfficialRates(apiKey, origin) {
   return output;
 }
 
-async function fetchCurrentRates(origin) {
-  // open.er-api.com 무료 실시간 환율 (USD 기준)
-  const res = await fetch('https://open.er-api.com/v6/latest/USD', {
-    cf: { connectTimeoutMs: 8000, readTimeoutMs: 8000 },
-  });
-  const data = await res.json();
-  if (data.result !== 'success') throw new Error('환율 조회 실패');
-
-  const krw = data.rates.KRW;
-  const jpy = data.rates.JPY;
-  const eur = data.rates.EUR;
-
-  // unix 타임스탬프(초)로 전달 — RFC 2822 문자열은 브라우저별 파싱 불안정
-  const updated = data.time_last_update_unix ?? null;
-
-  return [
-    { cur_unit: 'USD',     deal_bas_r: krw.toFixed(2),               time: updated },
-    { cur_unit: 'JPY(100)',deal_bas_r: (krw / jpy * 100).toFixed(2), time: updated },
-    { cur_unit: 'EUR',     deal_bas_r: (krw / eur).toFixed(2),       time: updated },
-  ];
-}
-
 export default {
   async fetch(request, env) {
     const origin = request.headers.get('Origin') || '';
@@ -104,18 +82,10 @@ export default {
       return new Response('Method Not Allowed', { status: 405 });
     }
 
-    const { searchParams } = new URL(request.url);
-    const mode = searchParams.get('mode') || 'official';
-
     try {
-      let output;
-      if (mode === 'current') {
-        output = await fetchCurrentRates(origin);
-      } else {
-        const apiKey = env.BOK_API_KEY;
-        if (!apiKey) throw new Error('BOK_API_KEY not configured');
-        output = await fetchOfficialRates(apiKey, origin);
-      }
+      const apiKey = env.BOK_API_KEY;
+      if (!apiKey) throw new Error('BOK_API_KEY not configured');
+      const output = await fetchOfficialRates(apiKey, origin);
 
       return new Response(JSON.stringify(output), {
         headers: {

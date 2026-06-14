@@ -446,9 +446,26 @@ const currencyRates = {
 
 const elCurrencyApiStatus  = document.getElementById('currencyApiStatus');
 const elCurrencyRefreshBtn = document.getElementById('currencyRefreshBtn');
-const elRateModeToggle     = document.getElementById('rateModeToggle');
+const elRateTypeBtns       = document.getElementById('rateTypeBtns');
 
-let rateMode = 'official'; // 'official' | 'current'
+let rateType = 'standard'; // 'standard' | 'cashBuy' | 'cashSell' | 'ttBuy' | 'ttSell'
+let baseApiLabel = '';
+
+const RATE_SPREADS = {
+  standard: 1.0,
+  cashBuy:  1.0175,
+  cashSell: 0.9825,
+  ttBuy:    1.01,
+  ttSell:   0.99,
+};
+const RATE_TYPE_LABELS = {
+  standard: '매매기준율',
+  cashBuy:  '현금 살 때',
+  cashSell: '현금 팔 때',
+  ttBuy:    '송금 보낼 때',
+  ttSell:   '송금 받을 때',
+};
+
 const elCurrencyBtns       = document.getElementById('currencyBtns');
 const elCurrencySymbolWrap = document.getElementById('currencySymbolWrap');
 const elCurrencySymbolInput= document.getElementById('currencySymbolInput');
@@ -516,10 +533,9 @@ async function fetchExchangeRates() {
   setApiStatus('환율 조회 중…');
 
   try {
-    const url = rateMode === 'current' ? `${proxyUrl}?mode=current` : proxyUrl;
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 10000);
-    const res = await fetch(url, { signal: ctrl.signal, cache: 'no-store' });
+    const res = await fetch(proxyUrl, { signal: ctrl.signal, cache: 'no-store' });
     clearTimeout(timer);
 
     const data = await res.json();
@@ -534,31 +550,15 @@ async function fetchExchangeRates() {
     const parse = item => item ? parseFloat(String(item.deal_bas_r).replace(/,/g, '')) : null;
     const rates = { usd: parse(usdItem), eur: parse(eurItem), jpy: parse(jpyItem) };
 
-    let label;
-    if (rateMode === 'current') {
-      const unixSec = (usdItem || eurItem || jpyItem)?.time;
-      if (unixSec) {
-        // unix 타임스탬프(초) → KST 변환
-        const kst = new Date((unixSec + 9 * 60 * 60) * 1000);
-        const mo  = kst.getUTCMonth() + 1;
-        const day = kst.getUTCDate();
-        const hh  = String(kst.getUTCHours()).padStart(2, '0');
-        const mm  = String(kst.getUTCMinutes()).padStart(2, '0');
-        label = `현재 환율 (${mo}월 ${day}일 ${hh}:${mm} KST)`;
-      } else {
-        label = '현재 환율';
-      }
-    } else {
-      const timeStr = (usdItem || eurItem || jpyItem)?.time ?? '';
-      label = '한국은행';
-      if (timeStr.length === 8) {
-        const d = new Date(
-          parseInt(timeStr.slice(0, 4)),
-          parseInt(timeStr.slice(4, 6)) - 1,
-          parseInt(timeStr.slice(6, 8))
-        );
-        label = `한국은행 ${toKoreanDate(d)} 최초고시`;
-      }
+    const timeStr = (usdItem || eurItem || jpyItem)?.time ?? '';
+    let label = '한국은행';
+    if (timeStr.length === 8) {
+      const d = new Date(
+        parseInt(timeStr.slice(0, 4)),
+        parseInt(timeStr.slice(4, 6)) - 1,
+        parseInt(timeStr.slice(6, 8))
+      );
+      label = `한국은행 ${toKoreanDate(d)} 최초고시`;
     }
 
     applyApiRates(rates, label);
@@ -575,6 +575,7 @@ function applyApiRates(rates, label) {
   if (rates.eur) { currencyRates.eur = rates.eur; localStorage.setItem('calc-rate-eur', rates.eur); }
   if (rates.jpy) { currencyRates.jpy = rates.jpy; localStorage.setItem('calc-rate-jpy', rates.jpy); }
   ratesLoaded = true;
+  baseApiLabel = label;
   setApiStatus(label);
   syncCurrencyUI();
   updateCurrency();
@@ -582,22 +583,23 @@ function applyApiRates(rates, label) {
 
 elCurrencyRefreshBtn.addEventListener('click', () => fetchExchangeRates());
 
-elRateModeToggle.addEventListener('click', e => {
-  const btn = e.target.closest('.rate-mode-btn');
-  if (!btn || btn.dataset.mode === rateMode) return;
-  rateMode = btn.dataset.mode;
-  elRateModeToggle.querySelectorAll('.rate-mode-btn').forEach(b =>
+elRateTypeBtns.addEventListener('click', e => {
+  const btn = e.target.closest('.rate-type-btn');
+  if (!btn || btn.dataset.type === rateType) return;
+  rateType = btn.dataset.type;
+  elRateTypeBtns.querySelectorAll('.rate-type-btn').forEach(b =>
     b.classList.toggle('active', b === btn)
   );
-  ratesLoaded = false;
-  fetchExchangeRates();
+  syncCurrencyUI();
+  updateCurrency();
 });
 
 function syncCurrencyUI() {
   const meta = getCurrencyMeta();
   elCurrencyRateLabel.textContent = meta.label;
-  const rate = currencyRates[currencyType];
-  elCurrencyRateInput.value = rate || '';
+  const base = currencyRates[currencyType];
+  const spread = currencyType === 'custom' ? 1.0 : RATE_SPREADS[rateType];
+  elCurrencyRateInput.value = base ? parseFloat((base * spread).toFixed(2)) : '';
   elCurrencySymbolWrap.classList.toggle('visible', currencyType === 'custom');
   document.querySelectorAll('#currencyBtns .tax-rate-btn').forEach(b =>
     b.classList.toggle('active', b.dataset.curr === currencyType)
@@ -613,7 +615,9 @@ function updateCurrency() {
   }
 
   const meta   = getCurrencyMeta();
-  const rate   = currencyRates[currencyType];
+  const base   = currencyRates[currencyType];
+  const spread = currencyType === 'custom' ? 1.0 : RATE_SPREADS[rateType];
+  const rate   = base * spread;
   const { symbol, unit, decimals } = meta;
 
   // 계산기 현재값 (수식 미리보기 포함)
@@ -660,8 +664,10 @@ elCurrencyBtns.addEventListener('click', e => {
 elCurrencyRateInput.addEventListener('input', () => {
   const v = parseFloat(elCurrencyRateInput.value);
   if (!isNaN(v) && v > 0) {
-    currencyRates[currencyType] = v;
-    localStorage.setItem(`calc-rate-${currencyType}`, v);
+    const spread = currencyType === 'custom' ? 1.0 : RATE_SPREADS[rateType];
+    const base = v / spread;
+    currencyRates[currencyType] = base;
+    localStorage.setItem(`calc-rate-${currencyType}`, base);
     ratesLoaded = true;
     updateCurrency();
   }
