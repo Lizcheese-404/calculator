@@ -191,7 +191,8 @@
   </div>
 
   <script src="config.js" onerror="window.EXIM_PROXY_URL=''"></script>
-  <script>window.EXIM_PROXY_URL = window.EXIM_PROXY_URL || '';</script>
+  <!-- 프록시 URL은 공개 엔드포인트(비밀 아님). 실제 API 키는 Cloudflare Worker Secret에 저장됨 -->
+  <script>window.EXIM_PROXY_URL = window.EXIM_PROXY_URL || 'https://exim-proxy.kr1004jy.workers.dev';</script>
   <script src="theme.js"></script>
   <script src="calculator.js"></script>
 </body>
