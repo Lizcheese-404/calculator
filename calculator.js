@@ -447,8 +447,15 @@ const currencyRates = {
 const elCurrencyApiStatus  = document.getElementById('currencyApiStatus');
 const elCurrencyRefreshBtn = document.getElementById('currencyRefreshBtn');
 const elRateTypeBtns       = document.getElementById('rateTypeBtns');
+const elRateSelectBtn      = document.getElementById('rateSelectBtn');
+const elRateSelectMenu     = document.getElementById('rateSelectMenu');
+const elRateSpreadWrap     = document.getElementById('rateSpreadWrap');
+const elRateSpreadInput    = document.getElementById('rateSpreadInput');
 
-let rateType = 'standard'; // 'standard' | 'cashBuy' | 'cashSell' | 'ttBuy' | 'ttSell'
+// 'standard' | 'cashBuy' | 'cashSell' | 'ttBuy' | 'ttSell' | 'customSpread'
+let rateType = localStorage.getItem('calc-rate-type') || 'standard';
+let customSpreadPct = parseFloat(localStorage.getItem('calc-rate-spread'));
+if (isNaN(customSpreadPct)) customSpreadPct = 0;
 let baseApiLabel = '';
 
 const RATE_SPREADS = {
@@ -459,12 +466,20 @@ const RATE_SPREADS = {
   ttSell:   0.99,
 };
 const RATE_TYPE_LABELS = {
-  standard: '매매기준율',
-  cashBuy:  '현금 살 때',
-  cashSell: '현금 팔 때',
-  ttBuy:    '송금 보낼 때',
-  ttSell:   '송금 받을 때',
+  standard:     '매매기준율',
+  cashBuy:      '현금 살 때',
+  cashSell:     '현금 팔 때',
+  ttBuy:        '송금 보낼 때',
+  ttSell:       '송금 받을 때',
+  customSpread: '직접 입력',
 };
+
+// 현재 환율 종류의 배율 (매매기준율 대비)
+function getSpread() {
+  if (currencyType === 'custom') return 1.0;
+  if (rateType === 'customSpread') return 1 + customSpreadPct / 100;
+  return RATE_SPREADS[rateType] ?? 1.0;
+}
 
 const elCurrencyBtns       = document.getElementById('currencyBtns');
 const elCurrencySymbolWrap = document.getElementById('currencySymbolWrap');
@@ -583,13 +598,61 @@ function applyApiRates(rates, label) {
 
 elCurrencyRefreshBtn.addEventListener('click', () => fetchExchangeRates());
 
-elRateTypeBtns.addEventListener('click', e => {
-  const btn = e.target.closest('.rate-type-btn');
-  if (!btn || btn.dataset.type === rateType) return;
-  rateType = btn.dataset.type;
-  elRateTypeBtns.querySelectorAll('.rate-type-btn').forEach(b =>
-    b.classList.toggle('active', b === btn)
+// 매매기준율 탭
+elRateTypeBtns.querySelector('[data-type="standard"]').addEventListener('click', () => {
+  setRateType('standard');
+  closeRateMenu();
+});
+
+// 환율 선택 드롭다운 토글
+elRateSelectBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  elRateSelectMenu.hidden = !elRateSelectMenu.hidden;
+});
+
+// 드롭다운 항목 선택
+elRateSelectMenu.addEventListener('click', e => {
+  const opt = e.target.closest('.rate-select-option');
+  if (!opt) return;
+  setRateType(opt.dataset.type);
+  closeRateMenu();
+});
+
+// 바깥 클릭 시 메뉴 닫기
+document.addEventListener('click', e => {
+  if (!elRateSelectMenu.hidden && !e.target.closest('.rate-select-wrap')) closeRateMenu();
+});
+
+function closeRateMenu() {
+  elRateSelectMenu.hidden = true;
+}
+
+function setRateType(type) {
+  rateType = type;
+  localStorage.setItem('calc-rate-type', type);
+  syncRateTypeUI();
+  syncCurrencyUI();
+  updateCurrency();
+}
+
+function syncRateTypeUI() {
+  const isStandard = rateType === 'standard';
+  elRateTypeBtns.querySelector('[data-type="standard"]')
+    .classList.toggle('active', isStandard);
+  elRateSelectBtn.classList.toggle('active', !isStandard);
+  elRateSelectBtn.textContent = isStandard
+    ? '환율 선택 ▾'
+    : `${RATE_TYPE_LABELS[rateType]} ▾`;
+  elRateSelectMenu.querySelectorAll('.rate-select-option').forEach(o =>
+    o.classList.toggle('active', o.dataset.type === rateType)
   );
+  elRateSpreadWrap.classList.toggle('visible', rateType === 'customSpread');
+}
+
+elRateSpreadInput.addEventListener('input', () => {
+  const v = parseFloat(elRateSpreadInput.value);
+  customSpreadPct = isNaN(v) ? 0 : v;
+  localStorage.setItem('calc-rate-spread', customSpreadPct);
   syncCurrencyUI();
   updateCurrency();
 });
@@ -598,8 +661,8 @@ function syncCurrencyUI() {
   const meta = getCurrencyMeta();
   elCurrencyRateLabel.textContent = meta.label;
   const base = currencyRates[currencyType];
-  const spread = currencyType === 'custom' ? 1.0 : RATE_SPREADS[rateType];
-  elCurrencyRateInput.value = base ? parseFloat((base * spread).toFixed(2)) : '';
+  // 소수점 둘째자리까지 항상 표시 (0이어도 .00 유지)
+  elCurrencyRateInput.value = base ? (base * getSpread()).toFixed(2) : '';
   elCurrencySymbolWrap.classList.toggle('visible', currencyType === 'custom');
   document.querySelectorAll('#currencyBtns .tax-rate-btn').forEach(b =>
     b.classList.toggle('active', b.dataset.curr === currencyType)
@@ -616,8 +679,7 @@ function updateCurrency() {
 
   const meta   = getCurrencyMeta();
   const base   = currencyRates[currencyType];
-  const spread = currencyType === 'custom' ? 1.0 : RATE_SPREADS[rateType];
-  const rate   = base * spread;
+  const rate   = base * getSpread();
   const { symbol, unit, decimals } = meta;
 
   // 계산기 현재값 (수식 미리보기 포함)
@@ -664,8 +726,7 @@ elCurrencyBtns.addEventListener('click', e => {
 elCurrencyRateInput.addEventListener('input', () => {
   const v = parseFloat(elCurrencyRateInput.value);
   if (!isNaN(v) && v > 0) {
-    const spread = currencyType === 'custom' ? 1.0 : RATE_SPREADS[rateType];
-    const base = v / spread;
+    const base = v / getSpread();
     currencyRates[currencyType] = base;
     localStorage.setItem(`calc-rate-${currencyType}`, base);
     ratesLoaded = true;
@@ -679,6 +740,8 @@ elCurrencySymbolInput.addEventListener('input', () => {
   updateCurrency();
 });
 
+if (customSpreadPct) elRateSpreadInput.value = customSpreadPct;
+syncRateTypeUI();
 syncCurrencyUI();
 fetchExchangeRates();
 

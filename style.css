@@ -747,9 +747,9 @@ body {
   flex: 1;
 }
 
-.rate-type-btns {
+.rate-type-row {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: 1fr 1fr;
   gap: 4px;
   margin-bottom: 6px;
 }
@@ -759,14 +759,15 @@ body {
   border-radius: 8px;
   color: var(--text-secondary);
   cursor: pointer;
-  font-size: 0.58rem;
+  font-size: 0.7rem;
   font-weight: 500;
   line-height: 1.3;
-  padding: 5px 2px;
+  padding: 7px 4px;
   text-align: center;
   transition: background 0.15s, color 0.15s;
   outline: none;
   white-space: nowrap;
+  width: 100%;
 }
 .rate-type-btn:hover {
   background: var(--bg-btn-util);
@@ -776,6 +777,70 @@ body {
   background: var(--accent);
   border-color: transparent;
   color: #fff;
+}
+
+/* ── 환율 선택 드롭다운 ── */
+.rate-select-wrap {
+  position: relative;
+}
+.rate-select-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px var(--shadow);
+}
+.rate-select-menu[hidden] {
+  display: none;
+}
+.rate-select-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 7px 9px;
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+  outline: none;
+  white-space: nowrap;
+}
+.rate-select-option small {
+  color: var(--text-dim);
+  font-size: 0.62rem;
+}
+.rate-select-option:hover {
+  background: var(--bg-btn-util);
+  color: var(--text-primary);
+}
+.rate-select-option.active {
+  color: var(--accent-light);
+}
+.rate-select-option.active small {
+  color: var(--accent-light);
+}
+
+/* ── 스프레드 직접 입력 ── */
+.rate-spread-wrap {
+  display: none;
+  margin-bottom: 6px;
+}
+.rate-spread-wrap.visible {
+  display: block;
 }
 
 .currency-refresh-btn {

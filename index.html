@@ -126,12 +126,23 @@
           <button class="currency-refresh-btn" id="currencyRefreshBtn" aria-label="환율 새로고침">↻</button>
         </div>
 
-        <div class="rate-type-btns" id="rateTypeBtns">
+        <div class="rate-type-row" id="rateTypeBtns">
           <button class="rate-type-btn active" data-type="standard">매매기준율</button>
-          <button class="rate-type-btn" data-type="cashBuy">현금 살 때</button>
-          <button class="rate-type-btn" data-type="cashSell">현금 팔 때</button>
-          <button class="rate-type-btn" data-type="ttBuy">송금 보낼 때</button>
-          <button class="rate-type-btn" data-type="ttSell">송금 받을 때</button>
+          <div class="rate-select-wrap">
+            <button class="rate-type-btn rate-select-btn" id="rateSelectBtn">환율 선택 ▾</button>
+            <div class="rate-select-menu" id="rateSelectMenu" hidden>
+              <button class="rate-select-option" data-type="cashBuy">현금 살 때 <small>+1.75%</small></button>
+              <button class="rate-select-option" data-type="cashSell">현금 팔 때 <small>−1.75%</small></button>
+              <button class="rate-select-option" data-type="ttBuy">송금 보낼 때 <small>+1%</small></button>
+              <button class="rate-select-option" data-type="ttSell">송금 받을 때 <small>−1%</small></button>
+              <button class="rate-select-option" data-type="customSpread">직접 입력 <small>스프레드</small></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="rate-spread-wrap" id="rateSpreadWrap">
+          <input class="tax-custom-input" id="rateSpreadInput" type="number"
+            placeholder="스프레드 % (예: 1.75 또는 -1.75)" step="0.01">
         </div>
 
         <div class="currency-api-status" id="currencyApiStatus"></div>
