@@ -526,17 +526,26 @@ async function fetchExchangeRates(forceRefresh = false) {
   const proxyUrl = window.EXIM_PROXY_URL;
   if (!proxyUrl) { setApiStatus('환율 직접 입력'); return; }
 
-  // 현재환율 모드는 캐시 없이 항상 호출
-  const today = toKSTDateParam();
-  const cacheKey = 'calc-bok-cache';
-  if (!forceRefresh && rateMode === 'official') {
-    const cached = sessionStorage.getItem(cacheKey);
-    if (cached) {
-      try {
-        const { date, rates, label } = JSON.parse(cached);
-        if (date === today) { applyApiRates(rates, label); return; }
-      } catch (_) {}
-    }
+  const OFFICIAL_KEY = 'calc-bok-official';
+  const CURRENT_KEY  = 'calc-bok-current';
+  const CURRENT_TTL  = 5 * 60 * 1000; // 현재환율 5분 캐시
+
+  if (!forceRefresh) {
+    try {
+      if (rateMode === 'official') {
+        const cached = sessionStorage.getItem(OFFICIAL_KEY);
+        if (cached) {
+          const { rates, label } = JSON.parse(cached);
+          applyApiRates(rates, label); return;
+        }
+      } else {
+        const cached = sessionStorage.getItem(CURRENT_KEY);
+        if (cached) {
+          const { fetchedAt, rates, label } = JSON.parse(cached);
+          if (Date.now() - fetchedAt < CURRENT_TTL) { applyApiRates(rates, label); return; }
+        }
+      }
+    } catch (_) {}
   }
 
   elCurrencyRefreshBtn.classList.add('spinning');
@@ -563,7 +572,19 @@ async function fetchExchangeRates(forceRefresh = false) {
 
     let label;
     if (rateMode === 'current') {
-      label = '현재 환율';
+      const rawTime = (usdItem || eurItem || jpyItem)?.time ?? '';
+      if (rawTime) {
+        const d = new Date(rawTime);
+        const kst = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+        const mo  = kst.getUTCMonth() + 1;
+        const day = kst.getUTCDate();
+        const hh  = String(kst.getUTCHours()).padStart(2, '0');
+        const mm  = String(kst.getUTCMinutes()).padStart(2, '0');
+        label = `현재 환율 (${mo}/${day} ${hh}:${mm} KST)`;
+      } else {
+        label = '현재 환율';
+      }
+      sessionStorage.setItem(CURRENT_KEY, JSON.stringify({ fetchedAt: Date.now(), rates, label }));
     } else {
       const timeStr = (usdItem || eurItem || jpyItem)?.time ?? '';
       label = '한국은행';
@@ -575,7 +596,7 @@ async function fetchExchangeRates(forceRefresh = false) {
         );
         label = `한국은행 ${toKoreanDate(d)} 최초고시`;
       }
-      sessionStorage.setItem(cacheKey, JSON.stringify({ date: today, rates, label }));
+      sessionStorage.setItem(OFFICIAL_KEY, JSON.stringify({ rates, label }));
     }
 
     applyApiRates(rates, label);
