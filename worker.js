@@ -40,7 +40,7 @@ function dateStr(d) {
 }
 
 async function fetchRate(apiKey, startDate, endDate, itemCode) {
-  const url = `${BOK_BASE}/${apiKey}/json/kr/1/3/731Y001/D/${startDate}/${endDate}/${itemCode}`;
+  const url = `${BOK_BASE}/${apiKey}/json/kr/1/10/731Y001/D/${startDate}/${endDate}/${itemCode}`;
   const res = await fetch(url, { cf: { connectTimeoutMs: 8000, readTimeoutMs: 8000 } });
   const data = await res.json();
   const rows = data?.StatisticSearch?.row;
