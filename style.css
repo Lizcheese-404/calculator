@@ -498,12 +498,12 @@ body {
 }
 
 .month-result-value {
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 300;
   color: var(--text-primary);
   word-break: break-all;
   letter-spacing: -0.5px;
-  min-height: 30px;
+  min-height: 22px;
   transition: color 0.3s;
 }
 
