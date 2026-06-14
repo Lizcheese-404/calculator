@@ -829,9 +829,40 @@ body {
 .rate-spread-wrap {
   display: none;
   margin-bottom: 6px;
+  align-items: center;
+  gap: 6px;
 }
 .rate-spread-wrap.visible {
-  display: block;
+  display: flex;
+}
+.rate-spread-wrap .spread-input {
+  flex: 1;
+  min-width: 0;
+}
+.spread-sign-btn {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  background: var(--bg-btn-num);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  outline: none;
+}
+.spread-sign-btn:hover {
+  background: var(--bg-btn-util);
+  color: var(--accent-light);
+}
+.spread-unit {
+  flex: 0 0 auto;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
 }
 
 .currency-refresh-btn {

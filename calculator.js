@@ -451,11 +451,13 @@ const elRateSelectBtn      = document.getElementById('rateSelectBtn');
 const elRateSelectMenu     = document.getElementById('rateSelectMenu');
 const elRateSpreadWrap     = document.getElementById('rateSpreadWrap');
 const elRateSpreadInput    = document.getElementById('rateSpreadInput');
+const elSpreadSignBtn      = document.getElementById('spreadSignBtn');
 
 // 'standard' | 'cashBuy' | 'cashSell' | 'ttBuy' | 'ttSell' | 'customSpread'
 let rateType = localStorage.getItem('calc-rate-type') || 'standard';
 let customSpreadPct = parseFloat(localStorage.getItem('calc-rate-spread'));
 if (isNaN(customSpreadPct)) customSpreadPct = 0;
+let spreadSign = customSpreadPct < 0 ? -1 : 1; // 부호 토글 (모바일 키패드에 - 없음 대응)
 let baseApiLabel = '';
 
 const RATE_SPREADS = {
@@ -649,12 +651,21 @@ function syncRateTypeUI() {
   elRateSpreadWrap.classList.toggle('visible', rateType === 'customSpread');
 }
 
-elRateSpreadInput.addEventListener('input', () => {
-  const v = parseFloat(elRateSpreadInput.value);
-  customSpreadPct = isNaN(v) ? 0 : v;
+// 입력란은 크기(양수)만 받고, 부호는 토글 버튼으로 결정
+function applySpreadInput() {
+  const mag = Math.abs(parseFloat(elRateSpreadInput.value)) || 0;
+  customSpreadPct = spreadSign * mag;
   localStorage.setItem('calc-rate-spread', customSpreadPct);
   syncCurrencyUI();
   updateCurrency();
+}
+
+elRateSpreadInput.addEventListener('input', applySpreadInput);
+
+elSpreadSignBtn.addEventListener('click', () => {
+  spreadSign = -spreadSign;
+  elSpreadSignBtn.textContent = spreadSign < 0 ? '−' : '+';
+  applySpreadInput();
 });
 
 function syncCurrencyUI() {
@@ -740,7 +751,8 @@ elCurrencySymbolInput.addEventListener('input', () => {
   updateCurrency();
 });
 
-if (customSpreadPct) elRateSpreadInput.value = customSpreadPct;
+if (customSpreadPct) elRateSpreadInput.value = Math.abs(customSpreadPct);
+elSpreadSignBtn.textContent = spreadSign < 0 ? '−' : '+';
 syncRateTypeUI();
 syncCurrencyUI();
 fetchExchangeRates();

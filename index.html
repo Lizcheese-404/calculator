@@ -140,8 +140,10 @@
         </div>
 
         <div class="rate-spread-wrap" id="rateSpreadWrap">
-          <input class="tax-custom-input" id="rateSpreadInput" type="number"
-            placeholder="스프레드 % (예: 1.75 또는 -1.75)" step="0.01">
+          <button class="spread-sign-btn" id="spreadSignBtn" type="button" aria-label="부호 전환">+</button>
+          <input class="tax-custom-input spread-input" id="rateSpreadInput" type="number"
+            inputmode="decimal" placeholder="스프레드 (예: 1.75)" min="0" step="0.01">
+          <span class="spread-unit">%</span>
         </div>
 
         <div class="currency-api-status" id="currencyApiStatus"></div>
