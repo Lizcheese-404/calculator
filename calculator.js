@@ -519,18 +519,20 @@ function setApiStatus(text, isError = false) {
   elCurrencyApiStatus.className = 'currency-api-status' + (isError ? ' error' : '');
 }
 
-async function fetchExchangeRates() {
+async function fetchExchangeRates(forceRefresh = false) {
   const proxyUrl = window.EXIM_PROXY_URL;
   if (!proxyUrl) { setApiStatus('환율 직접 입력'); return; }
 
-  // 당일 캐시 확인 (KST 기준)
+  // 당일 캐시 확인 (KST 기준, 새로고침 버튼은 우회)
   const today = toKSTDateParam();
-  const cached = localStorage.getItem('calc-bok-cache');
-  if (cached) {
-    try {
-      const { date, rates, label } = JSON.parse(cached);
-      if (date === today) { applyApiRates(rates, label); return; }
-    } catch (_) {}
+  if (!forceRefresh) {
+    const cached = localStorage.getItem('calc-bok-cache-v2');
+    if (cached) {
+      try {
+        const { date, rates, label } = JSON.parse(cached);
+        if (date === today) { applyApiRates(rates, label); return; }
+      } catch (_) {}
+    }
   }
 
   elCurrencyRefreshBtn.classList.add('spinning');
@@ -566,7 +568,7 @@ async function fetchExchangeRates() {
       label = `한국은행 ${toKoreanDate(d)} 기준`;
     }
 
-    localStorage.setItem('calc-bok-cache', JSON.stringify({ date: today, rates, label }));
+    localStorage.setItem('calc-bok-cache-v2', JSON.stringify({ date: today, rates, label }));
     applyApiRates(rates, label);
   } catch (_) {
     setApiStatus('조회 실패 · 직접 입력', true);
@@ -584,7 +586,7 @@ function applyApiRates(rates, label) {
   updateCurrency();
 }
 
-elCurrencyRefreshBtn.addEventListener('click', () => fetchExchangeRates());
+elCurrencyRefreshBtn.addEventListener('click', () => fetchExchangeRates(true));
 
 function syncCurrencyUI() {
   const meta = getCurrencyMeta();
