@@ -14,6 +14,7 @@ const elCurrent          = document.getElementById('current');
 const elExpression       = document.getElementById('expression');
 const elHistory          = document.getElementById('history');
 const elMonthResult      = document.getElementById('monthResult');
+const elMonthResultWrap  = document.getElementById('monthResultWrap');
 const elHistoryToolbar   = document.getElementById('historyToolbar');
 const elHistoryExpandBtn = document.getElementById('historyExpandBtn');
 const elHistoryClearBtn  = document.getElementById('historyClearBtn');
@@ -84,6 +85,8 @@ function updateDisplay() {
   elExpression.textContent = state.expression;
   renderHistory();
   divideByMonth();
+  updateTax();
+  updateCurrency();
 }
 
 function appendNumber(value) {
@@ -248,12 +251,15 @@ function percent() {
 }
 
 function divideByMonth() {
-  if (state.current === 'Error') { elMonthResult.textContent = '-'; return; }
+  if (state.current === 'Error') {
+    elMonthResult.textContent = '-';
+    elMonthResultWrap.dataset.raw = '';
+    return;
+  }
 
   let value = parseFloat(state.current);
-  if (isNaN(value)) { elMonthResult.textContent = '-'; return; }
+  if (isNaN(value)) { elMonthResult.textContent = '-'; elMonthResultWrap.dataset.raw = ''; return; }
 
-  // 수식이 진행 중이면 예상 결과를 미리 계산해 사용
   if (state.operator && state.previous !== '') {
     const a = parseFloat(state.previous);
     const b = value;
@@ -263,11 +269,412 @@ function divideByMonth() {
       case '×': value = a * b; break;
       case '÷': value = b === 0 ? NaN : a / b; break;
     }
-    if (isNaN(value)) { elMonthResult.textContent = '-'; return; }
+    if (isNaN(value)) { elMonthResult.textContent = '-'; elMonthResultWrap.dataset.raw = ''; return; }
   }
 
-  elMonthResult.textContent = addCommas(formatResult(value / 12));
+  const raw = formatResult(value / 12);
+  elMonthResult.textContent = addCommas(raw);
+  elMonthResultWrap.dataset.raw = raw;
+  const monthCopyBtn = elMonthResultWrap.querySelector('.copy-btn');
+  if (monthCopyBtn) monthCopyBtn.dataset.raw = raw;
 }
+
+// ── 세금 계산 ──
+let taxType = 'vat';
+let customTaxRate = 10;
+
+const elTaxRateBtns  = document.getElementById('taxRateBtns');
+const elTaxCustomWrap = document.getElementById('taxCustomWrap');
+const elTaxCustomRate = document.getElementById('taxCustomRate');
+const elTaxAddRows   = document.getElementById('taxAddRows');
+const elTaxSubRows   = document.getElementById('taxSubRows');
+const elTaxAddLabel  = document.getElementById('taxAddLabel');
+const elTaxSubLabel  = document.getElementById('taxSubLabel');
+
+elTaxRateBtns.addEventListener('click', e => {
+  const btn = e.target.closest('.tax-rate-btn');
+  if (!btn) return;
+  taxType = btn.dataset.tax;
+  document.querySelectorAll('.tax-rate-btn').forEach(b => b.classList.toggle('active', b === btn));
+  elTaxCustomWrap.classList.toggle('visible', taxType === 'custom');
+  updateTax();
+});
+
+elTaxCustomRate.addEventListener('input', () => {
+  const v = parseFloat(elTaxCustomRate.value);
+  if (!isNaN(v) && v > 0) { customTaxRate = v; updateTax(); }
+});
+
+function getTaxConfig() {
+  switch (taxType) {
+    case 'vat':    return { rate: 0.10, parts: null, isVat: true };
+    case '33':     return { rate: 0.033, parts: [['소득세 (3%)', 0.03], ['지방소득세 (0.3%)', 0.003]], isVat: false };
+    case '88':     return { rate: 0.088, parts: [['소득세 (8%)', 0.08], ['지방소득세 (0.8%)', 0.008]], isVat: false };
+    case 'custom': {
+      const r = customTaxRate / 100;
+      // 소득세 : 지방소득세 = 10 : 1 비율로 분리
+      const mainPct  = Math.round(customTaxRate / 1.1 * 10) / 10;
+      const localPct = Math.round((customTaxRate - mainPct) * 10) / 10;
+      return {
+        rate: r,
+        parts: [
+          [`소득세 (${mainPct}%)`, mainPct / 100],
+          [`지방소득세 (${localPct}%)`, localPct / 100],
+        ],
+        isVat: false,
+      };
+    }
+  }
+}
+
+const COPY_ICON = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>`;
+
+function taxRow(container, label, value, isTotal) {
+  const div = document.createElement('div');
+  div.className = 'tax-row' + (isTotal ? ' total' : '') + (value === null ? ' dash' : '');
+  const raw = value !== null ? formatResult(value) : '';
+  const copyBtn = value !== null ? `<button class="copy-btn" data-raw="${raw}" aria-label="복사">${COPY_ICON}</button>` : '';
+  div.innerHTML = `<span class="tax-row-label">${label}</span><span class="tax-row-value" data-raw="${raw}">${value !== null ? addCommas(raw) : '—'}${copyBtn}</span>`;
+  container.appendChild(div);
+}
+
+function renderTaxSection(container, base, cfg, isAddDir) {
+  container.innerHTML = '';
+  if (base === null) {
+    const rows = cfg.parts ? 4 : 3;
+    for (let i = 0; i < rows; i++) taxRow(container, '—', null, i === rows - 1);
+    return;
+  }
+
+  const { rate, parts, isVat } = cfg;
+
+  if (isVat) {
+    if (isAddDir) {
+      const tax  = Math.floor(base * rate);
+      taxRow(container, '공급가액', base, false);
+      taxRow(container, '부가세 (10%)', tax, false);
+      taxRow(container, '합계', base + tax, true);
+    } else {
+      const net  = Math.floor(base / (1 + rate));
+      const tax  = base - net;
+      taxRow(container, '합계', base, false);
+      taxRow(container, '부가세 (10%)', tax, false);
+      taxRow(container, '공급가액', net, true);
+    }
+  } else {
+    const grossLabel = taxType === 'custom' ? '세전 금액' : '총지급액';
+    const netLabel   = taxType === 'custom' ? '세후 금액' : '실수령액';
+
+    if (isAddDir) {
+      taxRow(container, grossLabel, base, false);
+      if (parts) {
+        let total = 0;
+        parts.forEach(([lbl, r]) => { const a = Math.floor(base * r); total += a; taxRow(container, lbl, a, false); });
+        taxRow(container, '합계 세액', total, false);
+        taxRow(container, netLabel, base - total, true);
+      } else {
+        const tax = Math.floor(base * rate);
+        taxRow(container, '세액', tax, false);
+        taxRow(container, netLabel, base - tax, true);
+      }
+    } else {
+      const gross = Math.floor(base / (1 - rate));
+      taxRow(container, netLabel, base, false);
+      if (parts) {
+        let total = 0;
+        parts.forEach(([lbl, r]) => { const a = Math.floor(gross * r); total += a; taxRow(container, lbl, a, false); });
+        taxRow(container, '합계 세액', total, false);
+        taxRow(container, grossLabel, gross, true);
+      } else {
+        const tax = gross - base;
+        taxRow(container, '세액', tax, false);
+        taxRow(container, grossLabel, gross, true);
+      }
+    }
+  }
+}
+
+function updateTax() {
+  let value = parseFloat(state.current);
+  if (isNaN(value) || state.current === 'Error') { value = null; }
+  else if (state.operator && state.previous !== '') {
+    const a = parseFloat(state.previous);
+    switch (state.operator) {
+      case '+': value = a + value; break;
+      case '-': value = a - value; break;
+      case '×': value = a * value; break;
+      case '÷': value = value === 0 ? null : a / value; break;
+    }
+    if (!isFinite(value)) value = null;
+  }
+  if (value !== null && value <= 0) value = null;
+
+  const cfg = getTaxConfig();
+
+  const isVat = cfg.isVat;
+  elTaxAddLabel.textContent = isVat ? '공급가액 → 합계' : '총지급액 → 실수령액';
+  elTaxSubLabel.textContent = isVat ? '합계 → 공급가액' : '실수령액 → 총지급액';
+
+  renderTaxSection(elTaxAddRows, value, cfg, true);
+  renderTaxSection(elTaxSubRows, value, cfg, false);
+}
+
+// ── 환율 변환 ──
+const CURRENCY_META = {
+  usd:    { symbol: '$',  label: '1 USD =',   unit: 1,   decimals: 2 },
+  jpy:    { symbol: '¥',  label: '100 JPY =', unit: 100, decimals: 0 },
+  eur:    { symbol: '€',  label: '1 EUR =',   unit: 1,   decimals: 2 },
+  custom: { symbol: '',   label: '1 ? =',     unit: 1,   decimals: 2 },
+};
+
+let currencyType = 'usd';
+let customCurrencySymbol = '';
+
+const currencyRates = {
+  usd:    parseFloat(localStorage.getItem('calc-rate-usd'))    || 1350,
+  jpy:    parseFloat(localStorage.getItem('calc-rate-jpy'))    || 950,
+  eur:    parseFloat(localStorage.getItem('calc-rate-eur'))    || 1480,
+  custom: parseFloat(localStorage.getItem('calc-rate-custom')) || 0,
+};
+
+const elCurrencyApiStatus  = document.getElementById('currencyApiStatus');
+const elCurrencyRefreshBtn = document.getElementById('currencyRefreshBtn');
+const elCurrencyBtns       = document.getElementById('currencyBtns');
+const elCurrencySymbolWrap = document.getElementById('currencySymbolWrap');
+const elCurrencySymbolInput= document.getElementById('currencySymbolInput');
+const elCurrencyRateLabel  = document.getElementById('currencyRateLabel');
+const elCurrencyRateInput  = document.getElementById('currencyRateInput');
+const elCurrFtoKFrom       = document.getElementById('currFtoKFrom');
+const elCurrFtoKValue      = document.getElementById('currFtoKValue');
+const elCurrKtoFFrom       = document.getElementById('currKtoFFrom');
+const elCurrKtoFValue      = document.getElementById('currKtoFValue');
+
+function getCurrencyMeta() {
+  if (currencyType === 'custom') {
+    const sym = customCurrencySymbol || '?';
+    return { symbol: sym, label: `1 ${sym} =`, unit: 1, decimals: 2 };
+  }
+  return CURRENCY_META[currencyType];
+}
+
+function formatForeign(value, decimals) {
+  const fixed = parseFloat(value.toFixed(decimals));
+  const [int, dec] = fixed.toString().split('.');
+  const intFormatted = int.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return decimals > 0 && dec ? `${intFormatted}.${dec.padEnd(decimals, '0')}` : intFormatted;
+}
+
+function setCurrencyRow(elFrom, elVal, fromText, toRaw, toDisplay) {
+  elFrom.textContent = fromText;
+  elVal.textContent = toDisplay;
+  elVal.dataset.raw = toRaw;
+  // copy btn
+  let btn = elVal.querySelector('.copy-btn');
+  if (!btn) {
+    btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.setAttribute('aria-label', '복사');
+    btn.innerHTML = COPY_ICON;
+    elVal.appendChild(btn);
+  }
+  btn.dataset.raw = toRaw;
+}
+
+function setCurrencyDash(elFrom, elVal) {
+  elFrom.textContent = '—';
+  elVal.textContent = '—';
+  elVal.dataset.raw = '';
+  const btn = elVal.querySelector('.copy-btn');
+  if (btn) btn.remove();
+}
+
+// ── 한국은행 ECOS 환율 API ──
+function toDateParam(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}${m}${day}`;
+}
+
+function toKoreanDate(d) {
+  return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
+}
+
+function setApiStatus(text, isError = false) {
+  elCurrencyApiStatus.textContent = text;
+  elCurrencyApiStatus.className = 'currency-api-status' + (isError ? ' error' : '');
+}
+
+async function fetchExchangeRates() {
+  const proxyUrl = window.EXIM_PROXY_URL;
+  if (!proxyUrl) { setApiStatus('환율 직접 입력'); return; }
+
+  // 당일 캐시 확인
+  const today = toDateParam(new Date());
+  const cached = localStorage.getItem('calc-bok-cache');
+  if (cached) {
+    try {
+      const { date, rates, label } = JSON.parse(cached);
+      if (date === today) { applyApiRates(rates, label); return; }
+    } catch (_) {}
+  }
+
+  elCurrencyRefreshBtn.classList.add('spinning');
+  setApiStatus('환율 조회 중…');
+
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 10000);
+    const res = await fetch(proxyUrl, { signal: ctrl.signal });
+    clearTimeout(timer);
+
+    const data = await res.json();
+    if (!Array.isArray(data) || data.length === 0) throw new Error('no data');
+
+    const find = code => data.find(r => r.cur_unit === code);
+    const usdItem = find('USD');
+    const eurItem = find('EUR');
+    const jpyItem = find('JPY(100)');
+    if (!usdItem && !eurItem && !jpyItem) throw new Error('no rates');
+
+    const parse = item => item ? parseFloat(String(item.deal_bas_r).replace(/,/g, '')) : null;
+    const rates = { usd: parse(usdItem), eur: parse(eurItem), jpy: parse(jpyItem) };
+
+    // 날짜는 각 통화 중 가장 최신 time 사용 (YYYYMMDD → 한글 날짜)
+    const timeStr = (usdItem || eurItem || jpyItem)?.time ?? '';
+    let label = '한국은행';
+    if (timeStr.length === 8) {
+      const d = new Date(
+        parseInt(timeStr.slice(0, 4)),
+        parseInt(timeStr.slice(4, 6)) - 1,
+        parseInt(timeStr.slice(6, 8))
+      );
+      label = `한국은행 ${toKoreanDate(d)} 기준`;
+    }
+
+    localStorage.setItem('calc-bok-cache', JSON.stringify({ date: today, rates, label }));
+    applyApiRates(rates, label);
+  } catch (_) {
+    setApiStatus('조회 실패 · 직접 입력', true);
+  } finally {
+    elCurrencyRefreshBtn.classList.remove('spinning');
+  }
+}
+
+function applyApiRates(rates, label) {
+  if (rates.usd) { currencyRates.usd = rates.usd; localStorage.setItem('calc-rate-usd', rates.usd); }
+  if (rates.eur) { currencyRates.eur = rates.eur; localStorage.setItem('calc-rate-eur', rates.eur); }
+  if (rates.jpy) { currencyRates.jpy = rates.jpy; localStorage.setItem('calc-rate-jpy', rates.jpy); }
+  setApiStatus(`기준 환율 ${label}`);
+  syncCurrencyUI();
+  updateCurrency();
+}
+
+elCurrencyRefreshBtn.addEventListener('click', () => fetchExchangeRates());
+
+function syncCurrencyUI() {
+  const meta = getCurrencyMeta();
+  elCurrencyRateLabel.textContent = meta.label;
+  const rate = currencyRates[currencyType];
+  elCurrencyRateInput.value = rate || '';
+  elCurrencySymbolWrap.classList.toggle('visible', currencyType === 'custom');
+  document.querySelectorAll('#currencyBtns .tax-rate-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.curr === currencyType)
+  );
+}
+
+function updateCurrency() {
+  const meta   = getCurrencyMeta();
+  const rate   = currencyRates[currencyType];
+  const { symbol, unit, decimals } = meta;
+
+  // 계산기 현재값 (수식 미리보기 포함)
+  let value = parseFloat(state.current);
+  if (isNaN(value) || state.current === 'Error') { setCurrencyDash(elCurrFtoKFrom, elCurrFtoKValue); setCurrencyDash(elCurrKtoFFrom, elCurrKtoFValue); return; }
+  if (state.operator && state.previous !== '') {
+    const a = parseFloat(state.previous);
+    switch (state.operator) {
+      case '+': value = a + value; break;
+      case '-': value = a - value; break;
+      case '×': value = a * value; break;
+      case '÷': value = value === 0 ? NaN : a / value; break;
+    }
+  }
+  if (!isFinite(value) || value <= 0 || !rate || rate <= 0) {
+    setCurrencyDash(elCurrFtoKFrom, elCurrFtoKValue);
+    setCurrencyDash(elCurrKtoFFrom, elCurrKtoFValue);
+    return;
+  }
+
+  // 외화 → 원화: value를 외화(unit단위)로 보고 KRW 계산
+  const effectiveRate = rate / unit;                    // KRW per 1 foreign unit
+  const fToKResult    = Math.floor(value * effectiveRate);
+  const fToKDisplay   = '₩' + addCommas(fToKResult.toString());
+  const fromForeign   = symbol + formatForeign(value, decimals);
+  setCurrencyRow(elCurrFtoKFrom, elCurrFtoKValue, fromForeign, fToKResult.toString(), fToKDisplay);
+
+  // 원화 → 외화: value를 KRW로 보고 외화 계산
+  const kToFResult  = value / effectiveRate;
+  const kToFRaw     = kToFResult.toFixed(decimals);
+  const kToFDisplay = symbol + formatForeign(kToFResult, decimals);
+  const fromKrw     = '₩' + addCommas(Math.floor(value).toString());
+  setCurrencyRow(elCurrKtoFFrom, elCurrKtoFValue, fromKrw, kToFRaw, kToFDisplay);
+}
+
+elCurrencyBtns.addEventListener('click', e => {
+  const btn = e.target.closest('.tax-rate-btn');
+  if (!btn) return;
+  currencyType = btn.dataset.curr;
+  syncCurrencyUI();
+  updateCurrency();
+});
+
+elCurrencyRateInput.addEventListener('input', () => {
+  const v = parseFloat(elCurrencyRateInput.value);
+  if (!isNaN(v) && v > 0) {
+    currencyRates[currencyType] = v;
+    localStorage.setItem(`calc-rate-${currencyType}`, v);
+    updateCurrency();
+  }
+});
+
+elCurrencySymbolInput.addEventListener('input', () => {
+  customCurrencySymbol = elCurrencySymbolInput.value.trim();
+  elCurrencyRateLabel.textContent = getCurrencyMeta().label;
+  updateCurrency();
+});
+
+syncCurrencyUI();
+fetchExchangeRates();
+
+// ── 클립보드 복사 ──
+function copyToClipboard(raw, btn) {
+  if (!raw) return;
+  navigator.clipboard.writeText(raw).then(() => {
+    btn.innerHTML = '✓';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.innerHTML = COPY_ICON;
+      btn.classList.remove('copied');
+    }, 1200);
+  });
+}
+
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.copy-btn');
+  if (!btn) return;
+  e.stopPropagation();
+  const raw = btn.dataset.raw || btn.closest('[data-raw]')?.dataset.raw;
+  copyToClipboard(raw, btn);
+});
+
+// 월 패널 복사 (wrap 전체 클릭)
+document.getElementById('monthResultWrap').addEventListener('click', e => {
+  if (e.target.closest('.copy-btn')) return; // copy-btn 자체 클릭은 위에서 처리
+  const raw = elMonthResultWrap.dataset.raw;
+  const btn = elMonthResultWrap.querySelector('.copy-btn');
+  if (btn) copyToClipboard(raw, btn);
+});
 
 // 버튼 이벤트
 document.querySelector('.buttons').addEventListener('click', e => {
@@ -332,6 +739,26 @@ function flashBtn(key) {
 }
 
 document.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey) {
+    if (e.key === 'c') {
+      const raw = state.current;
+      if (raw && raw !== 'Error') navigator.clipboard.writeText(raw);
+    } else if (e.key === 'v') {
+      e.preventDefault();
+      navigator.clipboard.readText().then(text => {
+        const num = text.replace(/,/g, '').trim();
+        if (/^-?\d+(\.\d+)?$/.test(num)) {
+          state.current = num.startsWith('-') ? num.replace('-', '') : num;
+          state.shouldReset = false;
+          state.afterEquals = false;
+          state.expression = '';
+          updateDisplay();
+        }
+      });
+    }
+    return;
+  }
+
   if (e.key >= '0' && e.key <= '9') { appendNumber(e.key); updateDisplay(); }
   else if (e.key === '.')            { appendNumber('.'); updateDisplay(); }
   else if (e.key === '+')            { chooseOperator('+'); updateDisplay(); }

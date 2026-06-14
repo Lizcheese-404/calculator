@@ -418,11 +418,11 @@ body {
   background: var(--bg-card);
   border-radius: var(--radius-card);
   border: 1px solid var(--border);
-  padding: 24px 18px;
+  padding: 14px 16px;
   box-shadow: 0 24px 64px var(--shadow);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
   transition: background 0.3s, border-color 0.3s;
 }
 
@@ -437,12 +437,7 @@ body {
 }
 
 .month-panel-desc {
-  font-size: 12px;
-  color: var(--text-secondary);
-  text-align: center;
-  line-height: 1.6;
-  word-break: keep-all;
-  transition: color 0.3s;
+  display: none;
 }
 
 .btn-month {
@@ -472,12 +467,12 @@ body {
 .month-result-box {
   background: var(--bg-display);
   border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 16px 14px;
+  border-radius: 12px;
+  padding: 10px 12px;
   text-align: center;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
   position: relative;
   overflow: hidden;
   transition: background 0.3s, border-color 0.3s;
@@ -503,7 +498,7 @@ body {
 }
 
 .month-result-value {
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 300;
   color: var(--text-primary);
   word-break: break-all;
@@ -512,14 +507,324 @@ body {
   transition: color 0.3s;
 }
 
+/* ── 우측 패널 묶음 ── */
+.side-panels {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── 세금 계산 패널 ── */
+.tax-panel {
+  width: 200px;
+  background: var(--bg-card);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--border);
+  padding: 20px 16px;
+  box-shadow: 0 24px 64px var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: background 0.3s, border-color 0.3s;
+}
+
+.tax-panel-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent-light);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  transition: color 0.3s;
+}
+
+.tax-rate-btns {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+}
+
+.tax-rate-btn {
+  background: var(--bg-btn-num);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-secondary);
+  font-family: 'Inter', sans-serif;
+  font-size: 9px;
+  font-weight: 500;
+  line-height: 1.4;
+  padding: 6px 2px;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  outline: none;
+}
+
+.tax-rate-btn small {
+  display: block;
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--accent-light);
+  transition: color 0.15s;
+}
+
+.tax-rate-btn:hover {
+  background: var(--bg-btn-util);
+  color: var(--text-primary);
+}
+
+.tax-rate-btn.active {
+  background: var(--accent);
+  border-color: transparent;
+  color: #fff;
+}
+
+.tax-rate-btn.active small {
+  color: rgba(255,255,255,0.8);
+}
+
+.tax-custom-wrap {
+  display: none;
+}
+
+.tax-custom-wrap.visible {
+  display: block;
+}
+
+.tax-custom-input {
+  width: 100%;
+  background: var(--bg-display);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  padding: 8px 10px;
+  text-align: right;
+  outline: none;
+  transition: border-color 0.15s, background 0.3s;
+  -moz-appearance: textfield;
+}
+
+.tax-custom-input::-webkit-inner-spin-button,
+.tax-custom-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+.tax-custom-input:focus {
+  border-color: var(--accent);
+}
+
+.tax-divider {
+  height: 1px;
+  background: var(--border);
+}
+
+.tax-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tax-section-label {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 2px;
+  transition: color 0.3s;
+}
+
+.tax-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.tax-row-label {
+  font-size: 10px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  transition: color 0.3s;
+}
+
+.tax-row-value {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-primary);
+  text-align: right;
+  word-break: break-all;
+  transition: color 0.3s;
+}
+
+.tax-row.total .tax-row-label {
+  color: var(--accent-light);
+  font-weight: 600;
+}
+
+.tax-row.total .tax-row-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-light);
+}
+
+.tax-row.dash .tax-row-value {
+  color: var(--text-dim);
+}
+
+/* ── 복사 버튼 ── */
+.value-copy-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-radius: 6px;
+  padding: 2px 4px;
+  margin: -2px -4px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.value-copy-wrap:hover {
+  background: rgba(124,106,255,0.1);
+}
+
+.copy-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--accent-light);
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.value-copy-wrap:hover .copy-btn,
+.tax-row:hover .copy-btn {
+  opacity: 1;
+}
+
+.copy-btn.copied {
+  color: #4ade80;
+  opacity: 1;
+}
+
+/* 세금 패널 행의 복사 */
+.tax-row-value .copy-btn {
+  font-size: 10px;
+}
+
+.tax-row-value {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 4px;
+  padding: 1px 3px;
+  margin: -1px -3px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.tax-row-value:hover {
+  background: rgba(124,106,255,0.1);
+}
+
+/* ── 환율 패널 헤더 ── */
+.currency-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.currency-refresh-btn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  line-height: 1;
+  transition: color 0.15s, transform 0.3s;
+}
+
+.currency-refresh-btn:hover { color: var(--accent-light); }
+.currency-refresh-btn.spinning { animation: spin 0.8s linear infinite; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.currency-api-status {
+  font-size: 9px;
+  color: var(--text-dim);
+  text-align: center;
+  line-height: 1.4;
+  min-height: 0;
+  transition: color 0.3s;
+}
+
+.currency-api-status.error { color: #f87171; }
+
+/* ── 환율 입력 행 ── */
+.currency-rate-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.currency-rate-label {
+  font-size: 10px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: color 0.3s;
+}
+
+.currency-rate-input {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg-display);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  padding: 6px 8px;
+  text-align: right;
+  outline: none;
+  transition: border-color 0.15s, background 0.3s;
+  -moz-appearance: textfield;
+}
+
+.currency-rate-input::-webkit-inner-spin-button,
+.currency-rate-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+.currency-rate-input:focus { border-color: var(--accent); }
+
+.currency-rate-unit {
+  font-size: 10px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  transition: color 0.3s;
+}
+
 /* ── 반응형 ── */
-@media (max-width: 520px) {
+@media (max-width: 560px) {
   .app { flex-direction: column; align-items: center; }
-  .month-panel { width: 300px; flex-direction: row; flex-wrap: wrap; gap: 12px; }
+  .side-panels { width: 300px; }
+  .month-panel { width: 100%; flex-direction: row; flex-wrap: wrap; gap: 12px; }
   .month-panel-title { width: 100%; }
   .month-panel-desc { display: none; }
-  .btn-month { flex: 1; }
   .month-result-box { flex: 1; }
   .month-divider { display: none; }
+  .tax-panel { width: 100%; }
   .theme-bar { flex-wrap: wrap; justify-content: center; border-radius: 20px; }
 }

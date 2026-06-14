@@ -1,0 +1,4 @@
+name = "exim-proxy"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+account_id = "f02d627b4f5dac92e13df29787457d40"
