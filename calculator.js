@@ -526,24 +526,17 @@ async function fetchExchangeRates(forceRefresh = false) {
   const proxyUrl = window.EXIM_PROXY_URL;
   if (!proxyUrl) { setApiStatus('환율 직접 입력'); return; }
 
-  const OFFICIAL_KEY = 'calc-bok-official';
-  const CURRENT_KEY  = 'calc-bok-current';
-  const CURRENT_TTL  = 5 * 60 * 1000; // 현재환율 5분 캐시
+  // 현재환율 모드만 5분 TTL 세션 캐시 (open.er-api 과호출 방지)
+  // 최초고시는 Worker HTTP 캐시(max-age=21600)에 위임 — sessionStorage 캐시 없음
+  const CURRENT_KEY = 'calc-bok-current';
+  const CURRENT_TTL = 5 * 60 * 1000;
 
-  if (!forceRefresh) {
+  if (!forceRefresh && rateMode === 'current') {
     try {
-      if (rateMode === 'official') {
-        const cached = sessionStorage.getItem(OFFICIAL_KEY);
-        if (cached) {
-          const { rates, label } = JSON.parse(cached);
-          applyApiRates(rates, label); return;
-        }
-      } else {
-        const cached = sessionStorage.getItem(CURRENT_KEY);
-        if (cached) {
-          const { fetchedAt, rates, label } = JSON.parse(cached);
-          if (Date.now() - fetchedAt < CURRENT_TTL) { applyApiRates(rates, label); return; }
-        }
+      const cached = sessionStorage.getItem(CURRENT_KEY);
+      if (cached) {
+        const { fetchedAt, rates, label } = JSON.parse(cached);
+        if (Date.now() - fetchedAt < CURRENT_TTL) { applyApiRates(rates, label); return; }
       }
     } catch (_) {}
   }
@@ -596,7 +589,6 @@ async function fetchExchangeRates(forceRefresh = false) {
         );
         label = `한국은행 ${toKoreanDate(d)} 최초고시`;
       }
-      sessionStorage.setItem(OFFICIAL_KEY, JSON.stringify({ rates, label }));
     }
 
     applyApiRates(rates, label);
