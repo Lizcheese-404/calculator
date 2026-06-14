@@ -82,8 +82,8 @@ async function fetchCurrentRates(origin) {
   const jpy = data.rates.JPY;
   const eur = data.rates.EUR;
 
-  // 업데이트 시각을 YYYYMMDD HH:MM(UTC) 형태로 전달
-  const updated = data.time_last_update_utc ?? null;
+  // unix 타임스탬프(초)로 전달 — RFC 2822 문자열은 브라우저별 파싱 불안정
+  const updated = data.time_last_update_unix ?? null;
 
   return [
     { cur_unit: 'USD',     deal_bas_r: krw.toFixed(2),               time: updated },

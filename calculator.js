@@ -572,15 +572,15 @@ async function fetchExchangeRates(forceRefresh = false) {
 
     let label;
     if (rateMode === 'current') {
-      const rawTime = (usdItem || eurItem || jpyItem)?.time ?? '';
-      if (rawTime) {
-        const d = new Date(rawTime);
-        const kst = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+      const unixSec = (usdItem || eurItem || jpyItem)?.time;
+      if (unixSec) {
+        // unix 타임스탬프(초) → KST 변환
+        const kst = new Date((unixSec + 9 * 60 * 60) * 1000);
         const mo  = kst.getUTCMonth() + 1;
         const day = kst.getUTCDate();
         const hh  = String(kst.getUTCHours()).padStart(2, '0');
         const mm  = String(kst.getUTCMinutes()).padStart(2, '0');
-        label = `현재 환율 (${mo}/${day} ${hh}:${mm} KST)`;
+        label = `현재 환율 (${mo}월 ${day}일 ${hh}:${mm} KST)`;
       } else {
         label = '현재 환율';
       }
