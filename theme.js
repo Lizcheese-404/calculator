@@ -9,6 +9,8 @@ const THEMES = [
   { id: 'rose',   label: '로즈',   color: '#f43f5e', light: '#fda4af', glow: 'rgba(244,63,94,0.35)'   },
   { id: 'pink',   label: '핑크',   color: '#ec4899', light: '#f9a8d4', glow: 'rgba(236,72,153,0.35)'  },
   { id: 'indigo', label: '인디고', color: '#6366f1', light: '#a5b4fc', glow: 'rgba(99,102,241,0.35)'  },
+  // 무채색: 모드별 회색은 style.css가 [data-theme="mono"]로 정의. applyTheme이 인라인을 제거해 캐스케이드 적용.
+  { id: 'mono',   label: '무채색', color: '#8a8a8a', light: '#a3a3a3', glow: 'rgba(138,138,138,0.18)', mono: true },
 ];
 
 const root         = document.documentElement;
@@ -20,17 +22,25 @@ const swatchContainer = document.getElementById('swatches');
 const modeDarkBtn  = document.getElementById('modeDark');
 const modeLightBtn = document.getElementById('modeLight');
 
-let currentMode  = localStorage.getItem('calc-mode')  || 'dark';
-let currentTheme = localStorage.getItem('calc-theme') || 'purple';
+let currentMode  = localStorage.getItem('calc-mode')  || 'light';
+let currentTheme = localStorage.getItem('calc-theme') || 'mono';
 
 function applyTheme(themeId) {
   const t = THEMES.find(t => t.id === themeId);
   if (!t) return;
   currentTheme = themeId;
   localStorage.setItem('calc-theme', themeId);
-  root.style.setProperty('--accent',       t.color);
-  root.style.setProperty('--accent-light', t.light);
-  root.style.setProperty('--accent-glow',  t.glow);
+  root.setAttribute('data-theme', themeId);
+  if (t.mono) {
+    // 무채색: 인라인 제거 → CSS [data-theme="mono"] / [data-mode][data-theme="mono"]가 모드별 회색 적용
+    root.style.removeProperty('--accent');
+    root.style.removeProperty('--accent-light');
+    root.style.removeProperty('--accent-glow');
+  } else {
+    root.style.setProperty('--accent',       t.color);
+    root.style.setProperty('--accent-light', t.light);
+    root.style.setProperty('--accent-glow',  t.glow);
+  }
   document.querySelectorAll('.swatch').forEach(s =>
     s.classList.toggle('active', s.dataset.theme === themeId)
   );

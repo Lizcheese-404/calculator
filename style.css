@@ -56,6 +56,21 @@
   --accent-text:   var(--accent);
 }
 
+/* ── 무채색 테마 (순수 중성 회색, 채도 0) ── */
+/* 다크 기본: 어두운 카드 위에서 밝은 중성 회색 액센트 */
+[data-theme="mono"] {
+  --accent:        #6e6e6e;
+  --accent-light:  #a3a3a3;  /* accent-text → 카드 대비 7.07:1 */
+  --accent-glow:   rgba(255,255,255,0.10);
+}
+
+/* 라이트: 흰 카드 위 진한 중성 회색 액센트 (WCAG AA, 흰글자 8.72:1) */
+[data-mode="light"][data-theme="mono"] {
+  --accent:        #4b4b4b;
+  --accent-light:  #6e6e6e;
+  --accent-glow:   rgba(75,75,75,0.18);
+}
+
 body {
   min-height: 100vh;
   display: flex;
