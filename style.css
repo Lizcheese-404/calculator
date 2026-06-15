@@ -8,35 +8,52 @@
   --accent-glow:   rgba(124,106,255,0.35);
   --accent-light:  #a594ff;
   --accent-active: #ffffff;
+  /* 액센트의 미묘한 표면/호버 틴트 (color-mix로 테마색을 따라감) */
+  --accent-tint:   color-mix(in srgb, var(--accent) 14%, transparent);
+  --accent-tint-strong: color-mix(in srgb, var(--accent) 22%, transparent);
 
-  /* 다크 기본값 */
-  --bg-page:       #0f0f14;
-  --bg-card:       #16161f;
-  --bg-btn-num:    #1e1e2a;
-  --bg-btn-util:   #252535;
-  --bg-display:    #13131c;
-  --text-primary:  #f0efff;
-  --text-secondary:#7b7a99;
-  --text-dim:      #44435a;
-  --border:        rgba(255,255,255,0.06);
-  --shadow:        rgba(0,0,0,0.6);
-  --radius-card:   28px;
-  --radius-btn:    18px;
+  /* 다크 기본값 — 중립 회색 기반, 채도 최소화 */
+  --bg-page:       #0e0e12;
+  --bg-card:       #17171d;
+  --bg-btn-num:    #20202a;
+  --bg-btn-util:   #292933;
+  --bg-display:    #121217;
+  --text-primary:  #f2f2f5;
+  --text-secondary:#9a9aab;
+  --text-dim:      #5a5a68;
+  --border:        rgba(255,255,255,0.07);
+  --border-strong: rgba(255,255,255,0.14);
+  --shadow:        rgba(0,0,0,0.45);
+  --ok:            #4ade80;
+  --error:         #f87171;
+  /* 강조 텍스트용 액센트 — 다크에서는 밝은 톤이 가독성↑ */
+  --accent-text:   var(--accent-light);
+
+  /* 기능적 라디우스 스케일 */
+  --radius-card:   16px;
+  --radius-btn:    12px;
+  --radius-input:  8px;
+  --radius-pill:   8px;
 }
 
 /* ── 라이트 모드 (저명도, 눈 부담 최소화) ── */
 [data-mode="light"] {
-  --bg-page:       #d6d6e0;
-  --bg-card:       #e4e4ee;
-  --bg-btn-num:    #d0d0de;
-  --bg-btn-util:   #c4c4d4;
-  --bg-display:    #cacacc;
-  --text-primary:  #1a1a2e;
-  --text-secondary:#50506a;
-  --text-dim:      #8888a8;
-  --border:        rgba(0,0,0,0.12);
-  --shadow:        rgba(0,0,0,0.18);
+  --bg-page:       #ececf1;
+  --bg-card:       #ffffff;
+  --bg-btn-num:    #f4f4f7;
+  --bg-btn-util:   #ebebf0;
+  --bg-display:    #f7f7fa;
+  --text-primary:  #16161e;
+  --text-secondary:#5a5a6e;
+  --text-dim:      #9a9aae;
+  --border:        rgba(0,0,0,0.08);
+  --border-strong: rgba(0,0,0,0.15);
+  --shadow:        rgba(0,0,0,0.10);
   --accent-glow:   rgba(124,106,255,0.18);
+  --ok:            #16a34a;
+  --error:         #dc2626;
+  /* 라이트에서는 진한 액센트가 흰 표면 위 가독성↑ (WCAG 대비) */
+  --accent-text:   var(--accent);
 }
 
 body {
@@ -44,12 +61,11 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 24px;
   background: var(--bg-page);
-  font-family: 'Inter', -apple-system, sans-serif;
+  font-family: 'Inter', -apple-system, 'Helvetica Neue', sans-serif;
+  color: var(--text-primary);
   transition: background 0.3s ease;
-  background-image:
-    radial-gradient(ellipse 60% 50% at 20% 30%, var(--accent-glow) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 40% at 80% 70%, var(--accent-glow) 0%, transparent 70%);
 }
 
 /* ── 설정 버튼 ── */
@@ -57,43 +73,44 @@ body {
   position: fixed;
   top: 20px;
   right: 20px;
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  border: 1px solid var(--border);
+  border: 0.5px solid var(--border-strong);
   background: var(--bg-card);
-  font-size: 18px;
+  font-size: 17px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 16px var(--shadow);
-  transition: transform 0.25s ease, background 0.3s, box-shadow 0.3s;
+  box-shadow: 0 1px 3px var(--shadow);
+  transition: transform 0.2s ease, background 0.15s, border-color 0.15s;
   z-index: 100;
 }
 
-.settings-btn:hover { transform: rotate(60deg); }
-.settings-btn.open  { transform: rotate(120deg); }
+.settings-btn:hover { transform: rotate(45deg); background: var(--bg-btn-util); }
+.settings-btn.open  { transform: rotate(90deg); }
+.settings-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* ── 테마 패널 ── */
 .theme-panel {
   position: fixed;
-  top: 72px;
+  top: 68px;
   right: 20px;
   width: 240px;
   background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 18px;
-  box-shadow: 0 12px 40px var(--shadow);
+  border: 0.5px solid var(--border-strong);
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 8px 28px var(--shadow);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   z-index: 99;
   opacity: 0;
-  transform: translateY(-8px) scale(0.97);
+  transform: translateY(-6px) scale(0.98);
   pointer-events: none;
-  transition: opacity 0.2s ease, transform 0.2s ease, background 0.3s;
+  transition: opacity 0.15s ease, transform 0.15s ease, background 0.3s;
 }
 
 .theme-panel.visible {
@@ -110,15 +127,15 @@ body {
 
 .theme-panel-title {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-primary);
-  letter-spacing: 0.3px;
+  letter-spacing: 0.01em;
 }
 
 .theme-panel-close {
   width: 24px;
   height: 24px;
-  border-radius: 50%;
+  border-radius: 6px;
   border: none;
   background: var(--bg-btn-util);
   color: var(--text-secondary);
@@ -127,17 +144,17 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s;
+  transition: background 0.12s, color 0.12s;
 }
 
-.theme-panel-close:hover { background: var(--bg-btn-num); }
+.theme-panel-close:hover { background: var(--bg-btn-num); color: var(--text-primary); }
 
 .theme-section-label {
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-dim);
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.1em;
 }
 
 .theme-swatches {
@@ -151,16 +168,17 @@ body {
   height: 26px;
   border-radius: 50%;
   border: 2px solid transparent;
+  box-shadow: 0 0 0 1px var(--border);
   cursor: pointer;
-  transition: transform 0.15s, border-color 0.15s;
+  transition: transform 0.12s, box-shadow 0.12s;
   outline: none;
 }
 
-.swatch:hover { transform: scale(1.2); }
+.swatch:hover { transform: scale(1.15); }
 .swatch.active {
-  border-color: var(--text-primary);
-  transform: scale(1.15);
+  box-shadow: 0 0 0 2px var(--bg-card), 0 0 0 4px var(--text-primary);
 }
+.swatch:focus-visible { box-shadow: 0 0 0 2px var(--bg-card), 0 0 0 4px var(--accent); }
 
 .mode-buttons {
   display: flex;
@@ -170,22 +188,25 @@ body {
 .mode-btn {
   flex: 1;
   padding: 9px 0;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: var(--bg-btn-num);
+  border-radius: var(--radius-pill);
+  border: 0.5px solid var(--border-strong);
+  background: transparent;
   color: var(--text-secondary);
   font-family: 'Inter', sans-serif;
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
 }
+
+.mode-btn:hover { background: var(--bg-btn-util); color: var(--text-primary); }
 
 .mode-btn.active {
   background: var(--accent);
   color: #fff;
   border-color: transparent;
 }
+.mode-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* 백드롭 (패널 외부 클릭 닫기) */
 .theme-backdrop {
@@ -200,7 +221,7 @@ body {
 /* ── 레이아웃 ── */
 .app {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   align-items: flex-start;
 }
 
@@ -209,25 +230,22 @@ body {
   width: 300px;
   background: var(--bg-card);
   border-radius: var(--radius-card);
-  border: 1px solid var(--border);
+  border: 0.5px solid var(--border-strong);
   overflow: hidden;
-  box-shadow:
-    0 0 0 1px rgba(255,255,255,0.04),
-    0 24px 64px var(--shadow),
-    0 0 80px var(--accent-glow);
-  transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+  box-shadow: 0 1px 3px var(--shadow), 0 8px 24px var(--shadow);
+  transition: background 0.3s, border-color 0.3s;
 }
 
 /* ── 디스플레이 ── */
 .display {
   background: var(--bg-display);
-  padding: 16px 24px 20px;
+  padding: 16px 20px 20px;
   min-height: 180px;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
   gap: 4px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 0.5px solid var(--border);
   position: relative;
   transition: background 0.3s;
 }
@@ -255,16 +273,16 @@ body {
 }
 
 .history-expand-btn {
-  color: var(--accent-light);
+  color: var(--accent-text);
 }
 
-.history-expand-btn:hover { background: rgba(124,106,255,0.12); }
+.history-expand-btn:hover { background: var(--accent-tint); }
 
 .history-clear-btn {
   color: var(--text-dim);
 }
 
-.history-clear-btn:hover { background: rgba(255,255,255,0.06); color: var(--text-secondary); }
+.history-clear-btn:hover { background: var(--bg-btn-util); color: var(--text-secondary); }
 
 .display-history {
   overflow-y: auto;
@@ -292,16 +310,6 @@ body {
 
 .history-line.highlight { color: var(--text-secondary); }
 
-.display::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--accent), transparent);
-  opacity: 0.7;
-  transition: background 0.3s;
-}
-
 .display-expression {
   font-size: 13px;
   color: var(--text-secondary);
@@ -326,19 +334,18 @@ body {
 .buttons {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
+  gap: 8px;
   padding: 16px;
   background: var(--bg-card);
   transition: background 0.3s;
 }
 
 .btn {
-  border: none;
   cursor: pointer;
   font-family: 'Inter', sans-serif;
   font-size: 20px;
   font-weight: 400;
-  height: 64px;
+  height: 60px;
   border-radius: var(--radius-btn);
   display: flex;
   align-items: center;
@@ -346,9 +353,9 @@ body {
   position: relative;
   overflow: hidden;
   outline: none;
-  transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.3s, color 0.3s;
+  transition: transform 0.12s ease, background 0.12s, border-color 0.12s, color 0.3s;
   -webkit-tap-highlight-color: transparent;
-  border: 1px solid transparent;
+  border: 0.5px solid var(--border);
 }
 
 .btn::after {
@@ -362,40 +369,40 @@ body {
 .btn:active::after,
 .btn.key-active::after { background: rgba(255,255,255,0.12); }
 .btn:active,
-.btn.key-active { transform: scale(0.94); }
+.btn.key-active { transform: scale(0.95); }
 
 [data-mode="light"] .btn:active::after,
-[data-mode="light"] .btn.key-active::after { background: rgba(0,0,0,0.1); }
+[data-mode="light"] .btn.key-active::after { background: rgba(0,0,0,0.06); }
+
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; z-index: 1; }
 
 .btn-number {
   background: var(--bg-btn-num);
   color: var(--text-primary);
-  border-color: var(--border);
-  box-shadow: 0 2px 8px var(--shadow);
 }
+.btn-number:hover { background: var(--bg-btn-util); }
 
 .btn-util {
   background: var(--bg-btn-util);
-  color: var(--accent-light);
+  color: var(--accent-text);
   font-weight: 500;
-  border-color: var(--border);
-  box-shadow: 0 2px 8px var(--shadow);
 }
+.btn-util:hover { background: var(--bg-btn-num); }
 
 .btn-operator {
   background: var(--accent);
   color: #fff;
   font-size: 22px;
   font-weight: 500;
-  border-color: rgba(255,255,255,0.12);
-  box-shadow: 0 4px 16px var(--accent-glow);
-  transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.3s;
+  border-color: transparent;
 }
+.btn-operator:hover { filter: brightness(1.08); }
 
 .btn-operator.active {
-  background: var(--accent-active);
-  color: var(--accent);
-  box-shadow: 0 4px 20px rgba(255,255,255,0.2);
+  background: var(--bg-btn-util);
+  color: var(--accent-text);
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
 }
 
 .btn-equals {
@@ -403,166 +410,135 @@ body {
   color: #fff;
   font-size: 22px;
   font-weight: 500;
-  border-color: rgba(255,255,255,0.12);
-  box-shadow: 0 4px 16px var(--accent-glow);
-  transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.3s;
+  border-color: transparent;
 }
+.btn-equals:hover { filter: brightness(1.08); }
 
 .btn-zero {
   grid-column: span 2;
-}
-
-/* ── 월 분할 패널 ── */
-.month-panel {
-  width: 200px;
-  background: var(--bg-card);
-  border-radius: var(--radius-card);
-  border: 1px solid var(--border);
-  padding: 14px 16px;
-  box-shadow: 0 24px 64px var(--shadow);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  transition: background 0.3s, border-color 0.3s;
-}
-
-.month-panel-title {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--accent-light);
-  text-align: center;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  transition: color 0.3s;
-}
-
-.month-panel-desc {
-  display: none;
-}
-
-.btn-month {
-  width: 100%;
-  padding: 14px 0;
-  background: var(--accent);
-  color: #fff;
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 16px;
-  font-family: 'Inter', sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 4px 20px var(--accent-glow);
-  transition: transform 0.08s ease, background 0.3s, box-shadow 0.3s;
-  letter-spacing: 0.3px;
-}
-
-.btn-month:active { transform: scale(0.96); }
-.btn-month:disabled { background: var(--bg-btn-util); box-shadow: none; color: var(--text-dim); cursor: default; }
-
-.month-divider {
-  height: 1px;
-  background: var(--border);
-}
-
-.month-result-box {
-  background: var(--bg-display);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 10px 12px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  position: relative;
-  overflow: hidden;
-  transition: background 0.3s, border-color 0.3s;
-}
-
-.month-result-box::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--accent), transparent);
-  opacity: 0.5;
-  transition: background 0.3s;
-}
-
-.month-result-value {
-  font-size: 14px;
-  font-weight: 300;
-  color: var(--text-primary);
-  word-break: break-all;
-  letter-spacing: -0.5px;
-  min-height: 22px;
-  transition: color 0.3s;
 }
 
 /* ── 우측 패널 묶음 ── */
 .side-panels {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
-/* ── 세금 계산 패널 ── */
+/* ── 패널 공통 (월 분할 · 세금 · 환율 통일) ── */
+.month-panel,
 .tax-panel {
   width: 200px;
   background: var(--bg-card);
   border-radius: var(--radius-card);
-  border: 1px solid var(--border);
-  padding: 20px 16px;
-  box-shadow: 0 24px 64px var(--shadow);
+  border: 0.5px solid var(--border-strong);
+  padding: 16px;
+  box-shadow: 0 1px 3px var(--shadow), 0 8px 24px var(--shadow);
   display: flex;
   flex-direction: column;
   gap: 12px;
   transition: background 0.3s, border-color 0.3s;
 }
 
+/* 패널 타이틀 공통 */
+.month-panel-title,
 .tax-panel-title {
   font-size: 11px;
-  font-weight: 600;
-  color: var(--accent-light);
+  font-weight: 500;
+  color: var(--text-secondary);
   text-align: center;
   text-transform: uppercase;
-  letter-spacing: 1.5px;
+  letter-spacing: 0.1em;
+  transition: color 0.3s;
+}
+
+/* ── 월 분할 패널 ── */
+.month-panel-desc {
+  display: none;
+}
+
+.btn-month {
+  width: 100%;
+  padding: 13px 0;
+  background: var(--accent);
+  color: #fff;
+  border: 0.5px solid transparent;
+  border-radius: var(--radius-btn);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 0.12s ease, filter 0.12s, background 0.3s;
+  letter-spacing: 0.01em;
+}
+
+.btn-month:hover { filter: brightness(1.08); }
+.btn-month:active { transform: scale(0.97); }
+.btn-month:disabled { background: var(--bg-btn-util); color: var(--text-dim); cursor: default; filter: none; }
+
+.month-divider {
+  height: 0.5px;
+  background: var(--border);
+}
+
+.month-result-box {
+  background: var(--bg-display);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-input);
+  padding: 12px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: background 0.3s, border-color 0.3s;
+}
+
+.month-result-value {
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--text-primary);
+  word-break: break-all;
+  letter-spacing: -0.01em;
+  min-height: 22px;
   transition: color 0.3s;
 }
 
 .tax-rate-btns {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 5px;
+  gap: 6px;
 }
 
 .tax-rate-btn {
   background: var(--bg-btn-num);
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-input);
   color: var(--text-secondary);
   font-family: 'Inter', sans-serif;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 500;
-  line-height: 1.4;
-  padding: 6px 2px;
+  line-height: 1.35;
+  padding: 7px 2px;
   cursor: pointer;
   text-align: center;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
   outline: none;
 }
 
 .tax-rate-btn small {
   display: block;
   font-size: 9px;
-  font-weight: 600;
-  color: var(--accent-light);
-  transition: color 0.15s;
+  font-weight: 500;
+  color: var(--text-dim);
+  margin-top: 1px;
+  transition: color 0.12s;
 }
 
 .tax-rate-btn:hover {
   background: var(--bg-btn-util);
   color: var(--text-primary);
 }
+.tax-rate-btn:hover small { color: var(--accent-text); }
 
 .tax-rate-btn.active {
   background: var(--accent);
@@ -571,8 +547,10 @@ body {
 }
 
 .tax-rate-btn.active small {
-  color: rgba(255,255,255,0.8);
+  color: rgba(255,255,255,0.85);
 }
+
+.tax-rate-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .tax-custom-wrap {
   display: none;
@@ -585,8 +563,8 @@ body {
 .tax-custom-input {
   width: 100%;
   background: var(--bg-display);
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  border: 0.5px solid var(--border-strong);
+  border-radius: var(--radius-input);
   color: var(--text-primary);
   font-family: 'Inter', sans-serif;
   font-size: 13px;
@@ -594,19 +572,22 @@ body {
   padding: 8px 10px;
   text-align: right;
   outline: none;
-  transition: border-color 0.15s, background 0.3s;
+  transition: border-color 0.12s, box-shadow 0.12s, background 0.3s;
   -moz-appearance: textfield;
 }
+
+.tax-custom-input::placeholder { color: var(--text-dim); }
 
 .tax-custom-input::-webkit-inner-spin-button,
 .tax-custom-input::-webkit-outer-spin-button { -webkit-appearance: none; }
 
 .tax-custom-input:focus {
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-tint);
 }
 
 .tax-divider {
-  height: 1px;
+  height: 0.5px;
   background: var(--border);
 }
 
@@ -617,12 +598,11 @@ body {
 }
 
 .tax-section-label {
-  font-size: 9px;
-  font-weight: 600;
+  font-size: 10px;
+  font-weight: 500;
   color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 2px;
+  letter-spacing: 0.04em;
+  margin-bottom: 3px;
   transition: color 0.3s;
 }
 
@@ -634,7 +614,7 @@ body {
 }
 
 .tax-row-label {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--text-secondary);
   flex-shrink: 0;
   transition: color 0.3s;
@@ -650,14 +630,14 @@ body {
 }
 
 .tax-row.total .tax-row-label {
-  color: var(--accent-light);
-  font-weight: 600;
+  color: var(--accent-text);
+  font-weight: 500;
 }
 
 .tax-row.total .tax-row-value {
   font-size: 14px;
-  font-weight: 600;
-  color: var(--accent-light);
+  font-weight: 500;
+  color: var(--accent-text);
 }
 
 .tax-row.dash .tax-row-value {
@@ -679,7 +659,7 @@ body {
 }
 
 .value-copy-wrap:hover {
-  background: rgba(124,106,255,0.1);
+  background: var(--accent-tint);
 }
 
 .copy-btn {
@@ -690,7 +670,7 @@ body {
   border: none;
   padding: 0;
   cursor: pointer;
-  color: var(--accent-light);
+  color: var(--accent-text);
   opacity: 0;
   transition: opacity 0.15s, color 0.15s;
   flex-shrink: 0;
@@ -703,7 +683,7 @@ body {
 }
 
 .copy-btn.copied {
-  color: #4ade80;
+  color: var(--ok);
   opacity: 1;
 }
 
@@ -725,7 +705,7 @@ body {
 }
 
 .tax-row-value:hover {
-  background: rgba(124,106,255,0.1);
+  background: var(--accent-tint);
 }
 
 /* ── 환율 패널 헤더 ── */
@@ -746,21 +726,20 @@ body {
 .rate-type-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 4px;
-  margin-bottom: 6px;
+  gap: 6px;
 }
 .rate-type-btn {
   background: var(--bg-btn-num);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-input);
   color: var(--text-secondary);
   cursor: pointer;
-  font-size: 0.7rem;
+  font-size: 11px;
   font-weight: 500;
   line-height: 1.3;
   padding: 7px 4px;
   text-align: center;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
   outline: none;
   white-space: nowrap;
   width: 100%;
@@ -774,6 +753,7 @@ body {
   border-color: transparent;
   color: #fff;
 }
+.rate-type-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* ── 환율 선택 드롭다운 ── */
 .rate-select-wrap {
@@ -790,7 +770,7 @@ body {
   gap: 2px;
   padding: 4px;
   background: var(--bg-card);
-  border: 1px solid var(--border);
+  border: 0.5px solid var(--border-strong);
   border-radius: 10px;
   box-shadow: 0 8px 24px var(--shadow);
 }
@@ -807,33 +787,33 @@ body {
   border-radius: 6px;
   color: var(--text-secondary);
   cursor: pointer;
-  font-size: 0.72rem;
+  font-size: 11px;
   font-weight: 500;
   padding: 7px 9px;
   text-align: left;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.12s, color 0.12s;
   outline: none;
   white-space: nowrap;
 }
 .rate-select-option small {
   color: var(--text-dim);
-  font-size: 0.62rem;
+  font-size: 10px;
 }
+.rate-select-option:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .rate-select-option:hover {
   background: var(--bg-btn-util);
   color: var(--text-primary);
 }
 .rate-select-option.active {
-  color: var(--accent-light);
+  color: var(--accent-text);
 }
 .rate-select-option.active small {
-  color: var(--accent-light);
+  color: var(--accent-text);
 }
 
 /* ── 스프레드 직접 입력 ── */
 .rate-spread-wrap {
   display: none;
-  margin-bottom: 6px;
   align-items: center;
   gap: 6px;
 }
@@ -846,27 +826,28 @@ body {
 }
 .spread-sign-btn {
   flex: 0 0 auto;
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   background: var(--bg-btn-num);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  border: 0.5px solid var(--border-strong);
+  border-radius: var(--radius-input);
   color: var(--text-primary);
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 500;
   line-height: 1;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
   outline: none;
 }
 .spread-sign-btn:hover {
   background: var(--bg-btn-util);
-  color: var(--accent-light);
+  color: var(--accent-text);
 }
+.spread-sign-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .spread-unit {
   flex: 0 0 auto;
   color: var(--text-secondary);
-  font-size: 0.85rem;
+  font-size: 13px;
   font-weight: 500;
 }
 
@@ -879,13 +860,14 @@ body {
   font-size: 14px;
   cursor: pointer;
   padding: 2px 0;
-  border-radius: 4px;
+  border-radius: 6px;
   line-height: 1;
   text-align: center;
-  transition: color 0.15s, transform 0.3s;
+  transition: color 0.12s, transform 0.3s;
 }
 
-.currency-refresh-btn:hover { color: var(--accent-light); }
+.currency-refresh-btn:hover { color: var(--accent-text); }
+.currency-refresh-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .currency-refresh-btn.spinning { animation: spin 0.8s linear infinite; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -908,7 +890,7 @@ body {
   transition: color 0.3s;
 }
 
-.currency-api-status.error { color: #f87171; }
+.currency-api-status.error { color: var(--error); }
 
 /* ── 환율 입력 행 ── */
 .currency-rate-row {
@@ -929,8 +911,8 @@ body {
   flex: 1;
   min-width: 0;
   background: var(--bg-display);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  border: 0.5px solid var(--border-strong);
+  border-radius: var(--radius-input);
   color: var(--text-primary);
   font-family: 'Inter', sans-serif;
   font-size: 12px;
@@ -938,14 +920,16 @@ body {
   padding: 6px 8px;
   text-align: right;
   outline: none;
-  transition: border-color 0.15s, background 0.3s;
+  transition: border-color 0.12s, box-shadow 0.12s, background 0.3s;
   -moz-appearance: textfield;
 }
+
+.currency-rate-input::placeholder { color: var(--text-dim); }
 
 .currency-rate-input::-webkit-inner-spin-button,
 .currency-rate-input::-webkit-outer-spin-button { -webkit-appearance: none; }
 
-.currency-rate-input:focus { border-color: var(--accent); }
+.currency-rate-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-tint); }
 
 .currency-rate-unit {
   font-size: 10px;
@@ -956,13 +940,21 @@ body {
 
 /* ── 반응형 ── */
 @media (max-width: 560px) {
-  .app { flex-direction: column; align-items: center; }
-  .side-panels { width: 300px; }
-  .month-panel { width: 100%; flex-direction: row; flex-wrap: wrap; gap: 12px; }
-  .month-panel-title { width: 100%; }
-  .month-panel-desc { display: none; }
+  body { padding: 16px; align-items: flex-start; }
+  .app { flex-direction: column; align-items: center; gap: 12px; width: 100%; max-width: 320px; }
+  .calculator { width: 100%; }
+  .side-panels { width: 100%; }
+  .month-panel,
+  .tax-panel { width: 100%; }
+
+  /* 월 분할: 라벨 + 결과를 한 줄로 묶어 공간 절약 */
+  .month-panel {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .month-panel-title { width: 100%; text-align: left; }
   .month-result-box { flex: 1; }
   .month-divider { display: none; }
-  .tax-panel { width: 100%; }
-  .theme-bar { flex-wrap: wrap; justify-content: center; border-radius: 20px; }
 }
