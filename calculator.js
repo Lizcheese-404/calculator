@@ -80,7 +80,7 @@ function updateDisplay() {
     len <= 17 ? 24 :
     len <= 21 ? 19 : 15;
   elCurrent.style.fontSize = fontSize + 'px';
-  elCurrent.className = 'display-current';
+  // className을 통째로 재설정하지 않음 — 15자리 초과 시 추가된 shake 클래스 보존
 
   elExpression.textContent = state.expression;
   renderHistory();
@@ -387,9 +387,16 @@ function renderTaxSection(container, base, cfg, isAddDir) {
       const gross = Math.round(base / (1 - rate));
       taxRow(container, netLabel, base, false);
       if (parts) {
-        let total = 0;
-        parts.forEach(([lbl, r]) => { const a = Math.floor(gross * r); total += a; taxRow(container, lbl, a, false); });
-        taxRow(container, '합계 세액', total, false);
+        // 합계 세액 = 세전 − 세후로 고정하고, 마지막 항목이 잔차를 흡수해
+        // 항목 합과 (세전−세후)가 항상 일치하도록 보정
+        const totalTax = gross - base;
+        let acc = 0;
+        parts.forEach(([lbl, r], i) => {
+          const a = i === parts.length - 1 ? totalTax - acc : Math.floor(gross * r);
+          acc += a;
+          taxRow(container, lbl, a, false);
+        });
+        taxRow(container, '합계 세액', totalTax, false);
         taxRow(container, grossLabel, gross, true);
       } else {
         const tax = gross - base;
