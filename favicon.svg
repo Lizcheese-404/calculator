@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 72" width="64" height="72">
+  <!-- Outer background -->
+  <rect width="64" height="72" rx="14" fill="#e5e5ea"/>
+
+  <!-- Display: white panel -->
+  <rect x="5" y="5" width="54" height="15" rx="6" fill="#ffffff"/>
+  <text x="55" y="16.5" font-family="-apple-system, sans-serif" font-size="9" fill="#1c1c1e" text-anchor="end" font-weight="300">0</text>
+
+  <!-- Row 1: C  ⌫  %  ÷ -->
+  <rect x="5"  y="23" width="11" height="9" rx="3.5" fill="#d1d1d6"/>
+  <rect x="18" y="23" width="11" height="9" rx="3.5" fill="#d1d1d6"/>
+  <rect x="31" y="23" width="11" height="9" rx="3.5" fill="#d1d1d6"/>
+  <rect x="44" y="23" width="15" height="9" rx="3.5" fill="#3a3a3c"/>
+
+  <!-- Row 2: 7  8  9  × -->
+  <rect x="5"  y="34" width="11" height="9" rx="3.5" fill="#f2f2f7"/>
+  <rect x="18" y="34" width="11" height="9" rx="3.5" fill="#f2f2f7"/>
+  <rect x="31" y="34" width="11" height="9" rx="3.5" fill="#f2f2f7"/>
+  <rect x="44" y="34" width="15" height="9" rx="3.5" fill="#3a3a3c"/>
+
+  <!-- Row 3: 4  5  6  − -->
+  <rect x="5"  y="45" width="11" height="9" rx="3.5" fill="#f2f2f7"/>
+  <rect x="18" y="45" width="11" height="9" rx="3.5" fill="#f2f2f7"/>
+  <rect x="31" y="45" width="11" height="9" rx="3.5" fill="#f2f2f7"/>
+  <rect x="44" y="45" width="15" height="9" rx="3.5" fill="#3a3a3c"/>
+
+  <!-- Row 4: 1  2  3  + -->
+  <rect x="5"  y="56" width="11" height="9" rx="3.5" fill="#f2f2f7"/>
+  <rect x="18" y="56" width="11" height="9" rx="3.5" fill="#f2f2f7"/>
+  <rect x="31" y="56" width="11" height="9" rx="3.5" fill="#f2f2f7"/>
+  <rect x="44" y="56" width="15" height="9" rx="3.5" fill="#3a3a3c"/>
+</svg>
