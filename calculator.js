@@ -18,6 +18,7 @@ const elMonthResultWrap  = document.getElementById('monthResultWrap');
 const elHistoryToolbar   = document.getElementById('historyToolbar');
 const elHistoryExpandBtn = document.getElementById('historyExpandBtn');
 const elHistoryClearBtn  = document.getElementById('historyClearBtn');
+const elDisplayCopyBtn   = document.getElementById('displayCopyBtn');
 
 const HISTORY_PREVIEW = 3;
 let historyExpanded = false;
@@ -72,6 +73,9 @@ function addCommas(str) {
 function updateDisplay() {
   const displayed = addCommas(state.current);
   elCurrent.textContent = displayed;
+  // 디스플레이 결과 복사 버튼: Error가 아닐 때만 노출하고 원본값을 data-raw로 동기화
+  elDisplayCopyBtn.style.display = state.current === 'Error' ? 'none' : '';
+  elDisplayCopyBtn.dataset.raw = state.current === 'Error' ? '' : state.current;
   const len = displayed.length;
   const fontSize =
     len <= 8  ? 54 :
@@ -285,7 +289,8 @@ function divideByMonth() {
     if (isNaN(value)) { elMonthResult.textContent = '-'; elMonthResultWrap.dataset.raw = ''; return; }
   }
 
-  const raw = Math.floor(value / 12).toString();
+  // 소수점 여섯째 자리까지 반올림 (나누어떨어지면 정수로 표시 — 불필요한 0 제거)
+  const raw = (Math.round((value / 12) * 1e6) / 1e6).toString();
   elMonthResult.textContent = addCommas(raw);
   elMonthResultWrap.dataset.raw = raw;
   const monthCopyBtn = elMonthResultWrap.querySelector('.copy-btn');
@@ -502,6 +507,7 @@ const elCurrencySymbolWrap = document.getElementById('currencySymbolWrap');
 const elCurrencySymbolInput= document.getElementById('currencySymbolInput');
 const elCurrencyRateLabel  = document.getElementById('currencyRateLabel');
 const elCurrencyRateInput  = document.getElementById('currencyRateInput');
+const elCurrencyRateCopyBtn= document.getElementById('currencyRateCopyBtn');
 const elCurrFtoKFrom       = document.getElementById('currFtoKFrom');
 const elCurrFtoKValue      = document.getElementById('currFtoKValue');
 const elCurrKtoFFrom       = document.getElementById('currKtoFFrom');
@@ -688,6 +694,7 @@ function syncCurrencyUI() {
   const base = currencyRates[currencyType];
   // 소수점 둘째자리까지 항상 표시 (0이어도 .00 유지)
   elCurrencyRateInput.value = base ? (base * getSpread()).toFixed(2) : '';
+  elCurrencyRateCopyBtn.dataset.raw = elCurrencyRateInput.value;
   elCurrencySymbolWrap.classList.toggle('visible', currencyType === 'custom');
   document.querySelectorAll('#currencyBtns .tax-rate-btn').forEach(b =>
     b.classList.toggle('active', b.dataset.curr === currencyType)
@@ -749,6 +756,7 @@ elCurrencyBtns.addEventListener('click', e => {
 });
 
 elCurrencyRateInput.addEventListener('input', () => {
+  elCurrencyRateCopyBtn.dataset.raw = elCurrencyRateInput.value;
   const v = parseFloat(elCurrencyRateInput.value);
   if (!isNaN(v) && v > 0) {
     const base = v / getSpread();

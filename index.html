@@ -40,6 +40,11 @@
         <div class="display-history" id="history"></div>
         <div class="display-expression" id="expression"></div>
         <div class="display-current" id="current">0</div>
+        <button class="copy-btn display-copy-btn" id="displayCopyBtn" data-raw="" aria-label="결과 복사">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+          </svg>
+        </button>
       </div>
       <div class="buttons">
         <button class="btn btn-util" data-action="clear" aria-label="전체 초기화">C</button>
@@ -171,6 +176,11 @@
           <input class="currency-rate-input" id="currencyRateInput" type="number"
             placeholder="환율" min="0.01" step="0.01">
           <span class="currency-rate-unit">KRW</span>
+          <button class="copy-btn currency-rate-copy-btn" id="currencyRateCopyBtn" data-raw="" aria-label="환율 복사">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+            </svg>
+          </button>
         </div>
 
         <div class="tax-divider"></div>

@@ -708,6 +708,23 @@ body {
   opacity: 1;
 }
 
+/* 계산기 디스플레이 결과 복사 (좌하단, 숫자는 우측 정렬이라 겹치지 않음) */
+.display-copy-btn {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+}
+.display:hover .display-copy-btn { opacity: 0.55; }
+.display .display-copy-btn:hover { opacity: 1; }
+.display-copy-btn.copied { opacity: 1; }
+/* 복사 후 COPY_ICON(10px) 복원 시 크기 흔들림 방지 */
+.display-copy-btn svg { width: 14px; height: 14px; }
+
+/* 환율(매매기준율) 값 복사 */
+.currency-rate-row .copy-btn { flex: 0 0 auto; }
+.currency-rate-row:hover .copy-btn { opacity: 1; }
+.currency-rate-copy-btn svg { width: 12px; height: 12px; }
+
 /* 세금 패널 행의 복사 */
 .tax-row-value .copy-btn {
   font-size: 10px;
