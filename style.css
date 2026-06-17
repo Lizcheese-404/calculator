@@ -711,7 +711,7 @@ body {
 /* 계산기 디스플레이 결과 복사 (좌하단, 숫자는 우측 정렬이라 겹치지 않음) */
 .display-copy-btn {
   position: absolute;
-  left: 16px;
+  right: 16px;
   bottom: 16px;
 }
 .display:hover .display-copy-btn { opacity: 0.55; }
