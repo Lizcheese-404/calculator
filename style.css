@@ -347,8 +347,8 @@ body {
   line-height: 1;
   white-space: nowrap;
   overflow: hidden;
-  /* 우측 하단 복사 아이콘(right:16px·약 14px)과 겹치지 않도록 여백 확보 */
-  padding-right: 22px;
+  /* 우측 하단 복사 아이콘(right:11px·약 11px)과 겹치지 않도록 여백 확보 */
+  padding-right: 12px;
   transition: font-size 0.1s ease, color 0.3s;
 }
 
@@ -713,14 +713,14 @@ body {
 /* 계산기 디스플레이 결과 복사 (좌하단, 숫자는 우측 정렬이라 겹치지 않음) */
 .display-copy-btn {
   position: absolute;
-  right: 16px;
-  bottom: 16px;
+  right: 11px;
+  bottom: 11px;
 }
 .display:hover .display-copy-btn { opacity: 0.55; }
 .display .display-copy-btn:hover { opacity: 1; }
 .display-copy-btn.copied { opacity: 1; }
 /* 복사 후 COPY_ICON(10px) 복원 시 크기 흔들림 방지 */
-.display-copy-btn svg { width: 14px; height: 14px; }
+.display-copy-btn svg { width: 11px; height: 11px; }
 
 /* 환율(매매기준율) 값 복사 */
 .currency-rate-row .copy-btn { flex: 0 0 auto; }
