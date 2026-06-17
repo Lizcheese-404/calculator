@@ -240,6 +240,11 @@ body {
   align-items: flex-start;
 }
 
+/* 데스크탑 컬럼 순서: [월 분할·세금] · 계산기 · 환율 */
+.fn-panels       { order: 1; }
+.calculator      { order: 2; }
+.currency-column { order: 3; }
+
 /* ── 계산기 본체 ── */
 .calculator {
   width: 300px;
@@ -443,7 +448,7 @@ body {
 /* ── 패널 공통 (월 분할 · 세금 · 환율 통일) ── */
 .month-panel,
 .tax-panel {
-  width: 200px;
+  width: 240px;
   background: var(--bg-card);
   border-radius: var(--radius-card);
   border: 0.5px solid var(--border-strong);
@@ -536,6 +541,7 @@ body {
   padding: 7px 2px;
   cursor: pointer;
   text-align: center;
+  white-space: nowrap;
   transition: background 0.12s, color 0.12s, border-color 0.12s;
   outline: none;
 }
@@ -777,8 +783,12 @@ body {
 .rate-select-menu {
   position: absolute;
   top: calc(100% + 4px);
-  left: 0;
+  /* 우측 기준 정렬 + 콘텐츠 폭만큼 확장 → 반쪽 컬럼 폭에 갇혀 +1.75% 등이 잘리던 문제 해결 */
   right: 0;
+  left: auto;
+  min-width: 100%;
+  width: max-content;
+  max-width: 200px;
   z-index: 20;
   display: flex;
   flex-direction: column;
@@ -958,9 +968,16 @@ body {
   body { padding: 16px; align-items: flex-start; }
   .app { flex-direction: column; align-items: center; gap: 12px; width: 100%; max-width: 320px; }
   .calculator { width: 100%; }
-  .side-panels { width: 100%; }
+  /* 래퍼를 풀어 개별 패널을 .app의 직접 자식으로 → order로 교차 배치 */
+  .side-panels { display: contents; }
   .month-panel,
   .tax-panel { width: 100%; }
+
+  /* 좁은 화면 순서: 계산기 → 월 분할 → 환율 → 세금 */
+  .calculator     { order: 1; }
+  .month-panel    { order: 2; }
+  .panel-currency { order: 3; }
+  .panel-tax      { order: 4; }
 
   /* 월 분할: 라벨 + 결과를 한 줄로 묶어 공간 절약 */
   .month-panel {

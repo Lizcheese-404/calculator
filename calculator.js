@@ -5,7 +5,7 @@ const state = {
   operator: null,
   expression: '',
   history: [],
-  preChain: null,    // 연쇄 계산 직전 상태 (backspace 복원용)
+  preChainStack: [], // 연쇄 계산 단계별 직전 상태 스택 (backspace 단계 복원용)
   shouldReset: false,
   afterEquals: false, // = 이후 상태 (백스페이스 무시용)
 };
@@ -125,12 +125,12 @@ function chooseOperator(op) {
 
   let prevDisplay;
   if (state.operator && !state.shouldReset) {
-    state.preChain = {
+    state.preChainStack.push({
       previous: state.previous,
       previousDisplay: state.previousDisplay,
       operator: state.operator,
       current: state.current,
-    };
+    });
     prevDisplay = `(${state.previousDisplay || addCommas(state.previous)} ${state.operator} ${addCommas(state.current)})`;
     calculate(true);
   }
@@ -172,7 +172,7 @@ function calculate(chain = false) {
   state.previous = '';
   state.previousDisplay = '';
   state.operator = null;
-  if (!chain) state.preChain = null;  // chain 계산 시엔 preChain 유지
+  if (!chain) state.preChainStack = [];  // chain 계산 시엔 스택 유지
   state.shouldReset = !chain;
   state.afterEquals = !chain;
 
@@ -190,7 +190,7 @@ function clearAll() {
   state.previousDisplay = '';
   state.operator = null;
   state.expression = '';
-  state.preChain = null;
+  state.preChainStack = [];
   state.shouldReset = false;
   state.afterEquals = false;
   elMonthResult.textContent = '-';
@@ -205,13 +205,13 @@ function backspace() {
 
   // "5 +" 대기 상태 (두 번째 숫자 미입력) → 연산자 취소
   if (state.shouldReset && state.operator) {
-    if (state.preChain) {
-      // 연쇄 계산이 있었으면 그 직전 상태로 복원
-      state.previous        = state.preChain.previous;
-      state.previousDisplay = state.preChain.previousDisplay;
-      state.operator        = state.preChain.operator;
-      state.current         = state.preChain.current;
-      state.preChain        = null;
+    if (state.preChainStack.length) {
+      // 연쇄 계산이 있었으면 한 단계 직전 상태로 복원 (스택 pop)
+      const snap            = state.preChainStack.pop();
+      state.previous        = snap.previous;
+      state.previousDisplay = snap.previousDisplay;
+      state.operator        = snap.operator;
+      state.current         = snap.current;
       state.shouldReset     = false;
       state.expression = `${state.previousDisplay || addCommas(state.previous)} ${state.operator} ${addCommas(state.current)}`;
     } else {
@@ -252,6 +252,13 @@ function backspace() {
 function percent() {
   if (state.current === 'Error') return;
   state.current = formatResult(parseFloat(state.current) / 100);
+  // % 는 현재값을 백분율(1/100)로 변환하는 독립 연산 → 대기 중이던 연산 상태를 정리해
+  // 화면 표시(expression)와 내부 상태(operator/previous)의 불일치를 방지
+  state.previous = '';
+  state.previousDisplay = '';
+  state.operator = null;
+  state.preChainStack = [];
+  state.shouldReset = false;
   state.expression = '';
   document.querySelectorAll('.btn-operator').forEach(btn => btn.classList.remove('active'));
 }
@@ -266,7 +273,7 @@ function divideByMonth() {
   let value = parseFloat(state.current);
   if (isNaN(value)) { elMonthResult.textContent = '-'; elMonthResultWrap.dataset.raw = ''; return; }
 
-  if (state.operator && state.previous !== '') {
+  if (state.operator && state.previous !== '' && !state.shouldReset) {
     const a = parseFloat(state.previous);
     const b = value;
     switch (state.operator) {
@@ -410,7 +417,7 @@ function renderTaxSection(container, base, cfg, isAddDir) {
 function updateTax() {
   let value = parseFloat(state.current);
   if (isNaN(value) || state.current === 'Error') { value = null; }
-  else if (state.operator && state.previous !== '') {
+  else if (state.operator && state.previous !== '' && !state.shouldReset) {
     const a = parseFloat(state.previous);
     switch (state.operator) {
       case '+': value = a + value; break;
@@ -703,7 +710,7 @@ function updateCurrency() {
   // 계산기 현재값 (수식 미리보기 포함)
   let value = parseFloat(state.current);
   if (isNaN(value) || state.current === 'Error') { setCurrencyDash(elCurrFtoKFrom, elCurrFtoKValue); setCurrencyDash(elCurrKtoFFrom, elCurrKtoFValue); return; }
-  if (state.operator && state.previous !== '') {
+  if (state.operator && state.previous !== '' && !state.shouldReset) {
     const a = parseFloat(state.previous);
     switch (state.operator) {
       case '+': value = a + value; break;

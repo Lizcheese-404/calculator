@@ -67,8 +67,8 @@
       </div>
     </div>
 
-    <!-- 우측 패널 묶음 -->
-    <div class="side-panels">
+    <!-- 기능 패널 묶음 (월 분할 · 세금) -->
+    <div class="side-panels fn-panels">
 
       <!-- 월 분할 패널 -->
       <div class="month-panel">
@@ -88,7 +88,7 @@
       </div>
 
       <!-- 세금 계산 패널 -->
-      <div class="tax-panel">
+      <div class="tax-panel panel-tax">
         <div class="tax-panel-title">세금 계산</div>
 
         <div class="tax-rate-btns" id="taxRateBtns">
@@ -118,8 +118,13 @@
         </div>
       </div>
 
+    </div>
+
+    <!-- 환율 변환 컬럼 (우측 분리) -->
+    <div class="side-panels currency-column">
+
       <!-- 환율 변환 패널 -->
-      <div class="tax-panel">
+      <div class="tax-panel panel-currency">
         <div class="currency-panel-header">
           <div class="tax-panel-title">환율 변환</div>
           <button class="currency-refresh-btn" id="currencyRefreshBtn" aria-label="환율 새로고침">↻</button>
@@ -142,7 +147,7 @@
         <div class="rate-spread-wrap" id="rateSpreadWrap">
           <button class="spread-sign-btn" id="spreadSignBtn" type="button" aria-label="부호 전환">+</button>
           <input class="tax-custom-input spread-input" id="rateSpreadInput" type="number"
-            inputmode="decimal" placeholder="스프레드 (예: 1.75)" min="0" step="0.01">
+            inputmode="decimal" placeholder="예: 1.75" min="0" step="0.01">
           <span class="spread-unit">%</span>
         </div>
 

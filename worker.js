@@ -49,7 +49,7 @@ async function fetchRate(apiKey, startDate, endDate, itemCode) {
   return { value: latest.DATA_VALUE, time: latest.TIME };
 }
 
-async function fetchOfficialRates(apiKey, origin) {
+async function fetchOfficialRates(apiKey) {
   const today = new Date();
   const weekAgo = new Date(today);
   weekAgo.setDate(weekAgo.getDate() - 7);
@@ -70,8 +70,12 @@ async function fetchOfficialRates(apiKey, origin) {
   return output;
 }
 
+// 일별 환율이므로 상류(BOK) 호출을 30분간 캐시해 쿼터 소모를 최소화한다.
+const CACHE_TTL_SECONDS = 1800;
+const CACHE_KEY = new Request('https://exim-proxy.internal/rates');
+
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const origin = request.headers.get('Origin') || '';
 
     if (request.method === 'OPTIONS') {
@@ -82,20 +86,45 @@ export default {
       return new Response('Method Not Allowed', { status: 405 });
     }
 
+    // 교차출처 차단: Origin 헤더가 있으나 허용 목록에 없으면 거부한다.
+    // (CORS 헤더만으로는 브라우저 표시만 막힐 뿐이므로 명시적으로 403 응답)
+    if (origin && !ALLOWED_ORIGINS.includes(origin)) {
+      return new Response(JSON.stringify({ error: 'forbidden' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
+      });
+    }
+
+    // 캐시 우선 조회 — 직접 호출이 반복돼도 대부분 캐시에서 응답되어 상류 호출이 줄어든다.
+    const cache = caches.default;
+    const hit = await cache.match(CACHE_KEY);
+    if (hit) {
+      const body = await hit.text();
+      return new Response(body, {
+        headers: { 'Content-Type': 'application/json', 'X-Cache': 'HIT', ...corsHeaders(origin) },
+      });
+    }
+
     try {
       const apiKey = env.BOK_API_KEY;
-      if (!apiKey) throw new Error('BOK_API_KEY not configured');
-      const output = await fetchOfficialRates(apiKey, origin);
+      if (!apiKey) throw new Error('not_configured');
+      const output = await fetchOfficialRates(apiKey);
+      const payload = JSON.stringify(output);
 
-      return new Response(JSON.stringify(output), {
+      // CORS 헤더는 origin마다 달라지므로 캐시 본문에는 포함하지 않는다.
+      ctx.waitUntil(cache.put(CACHE_KEY, new Response(payload, {
         headers: {
           'Content-Type': 'application/json',
-          'Cache-Control': 'no-store',
-          ...corsHeaders(origin),
+          'Cache-Control': `public, max-age=${CACHE_TTL_SECONDS}`,
         },
+      })));
+
+      return new Response(payload, {
+        headers: { 'Content-Type': 'application/json', 'X-Cache': 'MISS', ...corsHeaders(origin) },
       });
     } catch (e) {
-      return new Response(JSON.stringify({ error: e.message }), {
+      // 내부 메시지를 노출하지 않고 일반화된 에러만 반환한다.
+      return new Response(JSON.stringify({ error: 'upstream_error' }), {
         status: 502,
         headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
       });
